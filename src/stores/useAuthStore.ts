@@ -5,6 +5,9 @@ interface User {
     name: string;
     email: string;
     avatar?: string;
+    joinDate?: string;
+    lastActive?: string;
+    projectCount?: number;
 }
 
 interface AuthState {
@@ -47,7 +50,10 @@ export const useAuthStore = create<AuthState>((set) => ({
                     id: '1',
                     name: 'Demo User',
                     email: email,
-                    avatar: 'https://ui-avatars.com/api/?name=Demo+User&background=7c3aed&color=fff'
+                    avatar: 'https://ui-avatars.com/api/?name=Demo+User&background=7c3aed&color=fff',
+                    joinDate: 'Jan 2026',
+                    lastActive: 'Just now',
+                    projectCount: 12
                 };
                 const mockToken = 'mock-jwt-token-' + Math.random().toString(36).substring(2);
 

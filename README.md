@@ -26,6 +26,10 @@ Deexen adapts to your current goal with distinct AI operating modes:
 
 ### 👤 User Experience
 *   **AI Launchpad**: A "Not a usual IDE" profile page to jumpstart projects with natural language.
+*   **Enhanced User Dashboard**:
+    *   **Stats Overview**: View total projects, join date, and coding streak.
+    *   **Project Management**: Detailed project cards with file counts, language info, and "Open IDE" quick actions.
+    *   **Profile Header**: Quick access to user settings and secure logout.
 *   **Progress Tracking**: Track daily streaks, hours coded, and skills learned.
 *   **Cloud Sync**: (Coming Soon) seamless project synchronization.
 
