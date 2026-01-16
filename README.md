@@ -1,73 +1,75 @@
-# React + TypeScript + Vite
+# Deexen: AI-Powered IDE for Learning and Development
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![Deexen Banner](https://placeholder-banner-url.com) <!-- You might want to replace this if you have a screenshot -->
 
-Currently, two official plugins are available:
+**Deexen** is a next-generation AI-powered IDE (Integrated Development Environment) built to make coding easier and faster to learn. Unlike traditional IDEs, Deexen integrates AI directly into the editor to provide guided learning, intelligent assistance, and multiple operating modes tailored to your growth.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Usage
 
-## React Compiler
+Deexen is designed to fill the gap between "coding" and "learning to code". It supports all major programming languages and offers a familiar VS Code-like interface enhanced with deep AI integration.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ✨ Core Features
 
-## Expanding the ESLint configuration
+### 🧠 Multiple AI Modes
+Deexen adapts to your current goal with distinct AI operating modes:
+1.  **Debug Mode**: Identifies errors, explains the "why", and provides fixes.
+2.  **Enhancement Mode**: Suggests refactoring, structural improvements, and optimizations.
+3.  **Expansion Mode**: Helps scale projects by generating modules and advanced features.
+4.  **Strict Teaching Mode**: Acts as a mentor—providing hints and guidance instead of answers.
+5.  **Free Coding (Live Fix)**: Non-intrusive monitoring with instant fixes when you get stuck.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 💻 Full-Featured IDE
+*   **Monaco Editor Integration**: Professional-grade code editing experience.
+*   **File System**: Create files, folders, and manage projects.
+*   **Terminal**: Built-in simulated terminal for command execution.
+*   **Resizable Panels**: customizable workspace layout.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 👤 User Experience
+*   **AI Launchpad**: A "Not a usual IDE" profile page to jumpstart projects with natural language.
+*   **Progress Tracking**: Track daily streaks, hours coded, and skills learned.
+*   **Cloud Sync**: (Coming Soon) seamless project synchronization.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🛠 Tech Stack
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+*   **Frontend Framework**: React 19 + Vite
+*   **Language**: TypeScript
+*   **Styling**: TailwindCSS v4
+*   **State Management**: Zustand
+*   **Editor**: Monaco Editor (`@monaco-editor/react`)
+*   **Icons**: Lucide React
+*   **Routing**: React Router v7
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🏁 Getting Started
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+To run Deexen locally for development:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/your-username/deexen-frontend.git
+    cd deexen-frontend
+    ```
+
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    ```
+
+3.  **Start the development server**:
+    ```bash
+    npm run dev
+    ```
+
+4.  Open `http://localhost:5173` in your browser.
+
+## 📈 How to Track Progress (For Observers)
+
+We are building Deexen in public! Here is how you can follow the development journey and see changes as they happen:
+
+*   **Main Branch (`main`)**: This contains the stable, verified version of the application.
+*   **Feature Branches**: We develop features in isolated branches (e.g., `feature/project-setup`, `feature/ai-integration`).
+*   **Pull Requests (PRs)**: To see detailed code changes and discussions, check the **Pull Requests** tab on GitHub. Each major feature merge is documented there.
+*   **Commits**: View the **Commits** history to see granular updates and step-by-step implementation details.
+
+---
+
+*Deexen is currently in active development / Pre-Alpha.*
