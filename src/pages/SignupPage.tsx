@@ -25,7 +25,7 @@ export default function SignupPage() {
     useEffect(() => {
         initialize();
         if (isAuthenticated) {
-            navigate('/profile');
+            navigate('/dashboard');
         }
     }, [initialize, isAuthenticated, navigate]);
 
@@ -86,7 +86,7 @@ export default function SignupPage() {
 
         try {
             await register(name, email, password);
-            navigate('/profile');
+            navigate('/dashboard');
         } catch {
             setFormError('Failed to create account. Please try again.');
         } finally {

@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
-import ProfilePage from '@/pages/ProfilePage';
+import DashboardPage from '@/pages/DashboardPage';
 import { useAuthStore } from '@/stores/useAuthStore';
 
 import WorkspacePage from '@/pages/WorkspacePage';
@@ -30,10 +30,10 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route
-          path="/profile"
+          path="/dashboard"
           element={
             <ProtectedRoute>
-              <ProfilePage />
+              <DashboardPage />
             </ProtectedRoute>
           }
         />

@@ -19,7 +19,7 @@ export default function LoginPage() {
     useEffect(() => {
         initialize();
         if (isAuthenticated) {
-            navigate('/profile');
+            navigate('/dashboard');
         }
     }, [initialize, isAuthenticated, navigate]);
 

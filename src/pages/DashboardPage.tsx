@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    FolderOpen, LogOut, Plus, FileCode, Clock, Code2,
-    Settings, ChevronRight, Search, Star, MoreHorizontal,
-    User, ExternalLink
+    FolderOpen, LogOut, Plus,
+    Settings, Search, Star, MoreHorizontal,
+    ExternalLink
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -48,7 +48,7 @@ const projects = [
     },
 ];
 
-export default function ProfilePage() {
+export default function DashboardPage() {
     const navigate = useNavigate();
     const { user, logout } = useAuthStore();
     const [searchQuery, setSearchQuery] = useState('');

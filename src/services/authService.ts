@@ -1,5 +1,5 @@
 // Authentication Service
-// Handles login, logout, registration, and user profile
+// Handles login, logout, registration, and user data
 
 import { apiClient } from './apiClient';
 
