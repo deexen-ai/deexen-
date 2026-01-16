@@ -29,6 +29,12 @@ Deexen adapts to your current goal with distinct AI operating modes:
 *   **Progress Tracking**: Track daily streaks, hours coded, and skills learned.
 *   **Cloud Sync**: (Coming Soon) seamless project synchronization.
 
+### 🔐 Authentication System (Mock)
+*   **Secure Login UI**: Modern, glass-morphic design with real-time field validation.
+*   **Validation Rules**: Email format checking and password strength (min 6 chars) feedback.
+*   **Session Management**: Persists user session via `localStorage` to handle page reloads.
+*   **Demo Mode**: Use any valid email and a 6+ character password to explore the system.
+
 ## 🛠 Tech Stack
 
 *   **Frontend Framework**: React 19 + Vite
