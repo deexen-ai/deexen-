@@ -1,6 +1,6 @@
 # Deexen: AI-Powered IDE for Learning and Development
 
-![Deexen Banner](https://placeholder-banner-url.com) <!-- You might want to replace this if you have a screenshot -->
+![Deexen Banner](public/banner.png)
 
 **Deexen** is a next-generation AI-powered IDE (Integrated Development Environment) built to make coding easier and faster to learn. Unlike traditional IDEs, Deexen integrates AI directly into the editor to provide guided learning, intelligent assistance, and multiple operating modes tailored to your growth.
 
@@ -28,16 +28,19 @@ Deexen adapts to your current goal with distinct AI operating modes:
 *   **AI Launchpad**: A "Not a usual IDE" profile page to jumpstart projects with natural language.
 *   **Enhanced User Dashboard**:
     *   **Stats Overview**: View total projects, join date, and coding streak.
-    *   **Project Management**: Detailed project cards with file counts, language info, and "Open IDE" quick actions.
+    *   **Project Management**: Detailed project cards with file counts, language info, search/filter capabilities, and "Open IDE" quick actions.
     *   **Profile Header**: Quick access to user settings and secure logout.
 *   **Progress Tracking**: Track daily streaks, hours coded, and skills learned.
 *   **Cloud Sync**: (Coming Soon) seamless project synchronization.
 
 ### 🔐 Authentication System (Mock)
-*   **Secure Login UI**: Modern, glass-morphic design with real-time field validation.
-*   **Validation Rules**: Email format checking and password strength (min 6 chars) feedback.
+*   **Secure Login & Signup**: Modern, glass-morphic design with real-time field validation.
+*   **Validation Rules**: 
+    *   Name (min 2 chars)
+    *   Email format checking 
+    *   Password strength (min 6 chars) feedback.
 *   **Session Management**: Persists user session via `localStorage` to handle page reloads.
-*   **Demo Mode**: Use any valid email and a 6+ character password to explore the system.
+*   **Demo Mode**: Use any valid email/password to explore the system (Mock Auth).
 
 ## 🛠 Tech Stack
 
