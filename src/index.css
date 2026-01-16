@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+:root {
+  /* Deexen Brand Colors - Light Theme based on Screenshot */
+  --color-primary: #7c3aed;
+  --color-primary-hover: #6d28d9;
+
+  /* VS Code Light Theme Palette */
+  --bg-canvas: #ffffff;
+  --bg-surface: #f3f4f6;
+  /* Sidebar/Panel background */
+  --bg-surface-hover: #e5e7eb;
+  --border-default: #e5e7eb;
+  --border-muted: #f3f4f6;
+
+  --text-primary: #1f2937;
+  /* Gray-900 */
+  --text-secondary: #6b7280;
+  /* Gray-500 */
+  --text-link: #3b82f6;
+
+  /* Activity Bar */
+  --bg-activity-bar: #f8f9fa;
+  /* Very light gray */
+
+  --code-bg: #ffffff;
+}
+
+body {
+  @apply bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans antialiased;
+}
+
+/* Custom Scrollbar - Light */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full border-2 border-white;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}

@@ -1,41 +1,73 @@
-# Deexen: AI-Powered IDE for Learning and Development
-Deexen is an AI-powered IDE (Integrated Development Environment), similar to VS Code, built to make coding easier and faster to learn. It supports all major programming languages and provides multiple learning modes so users can code normally or learn while coding with
-AI support.
+# React + TypeScript + Vite
 
-## What Makes Deexen Different
-Traditional IDEs (such as VS Code or IntelliJ) are powerful but do not teach users directly. Learners still depend on external resources like videos, mentors, or forums to resolve errors and improve skills. Deexen integrates AI directly into the editor to provide guided learning and intelligent assistance.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-### Core Feature: Multiple AI Modes
-Deexen offers multiple modes depending on the user’s learning or development preference:
-##### 1. Debug Mode
-Identifies errors in code, explains why they occur, and provides fixes with alternative solutions.
-##### 2. Enhancement Mode
-Improves code quality by suggesting refactoring, better structure, and optimization for
-performance and readability.
-##### 3. Expansion Mode
-Expands code by adding advanced features, generating additional modules, and helping
-transform basic projects into scalable solutions.
-##### 4. Strict Teaching Mode
-Operates like a structured learning mentor, providing hints and step-by-step guidance instead
-of immediate solutions, encouraging deeper understanding.
-##### 5. Free Coding with Live Fix Mode
-Allows the user to code freely with minimal interruption while AI monitors and provides live
-suggestions and instant fixes when needed.
+Currently, two official plugins are available:
 
-### IDE Features (Similar to VS Code)
-Deexen is a full IDE, not just a chatbot or code assistant. Core IDE functions include:
-- File creation
-- Folder creation
-- Project file explorer
-- Built-in terminal
-- Multi-language development support
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-### User System
-Deexen includes key user features:
-- Login page for authentication and secure access
-- Profile page for managing projects, settings, preferred learning modes, and progress tracking
+## React Compiler
 
-### Future Improvement Scope
-Deexen can be improved over time with additional IDE and learning enhancements such as
-cloud sync, collaboration, advanced templates, code review mode, and interview preparation
-workflows
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
+
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
