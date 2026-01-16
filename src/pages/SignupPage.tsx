@@ -3,17 +3,23 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 
-export default function LoginPage() {
+export default function SignupPage() {
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+
+    const [nameError, setNameError] = useState('');
     const [emailError, setEmailError] = useState('');
     const [passwordError, setPasswordError] = useState('');
+    const [confirmError, setConfirmError] = useState('');
     const [formError, setFormError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const { login, initialize, isAuthenticated } = useAuthStore();
+    const { register, initialize, isAuthenticated } = useAuthStore();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -22,6 +28,12 @@ export default function LoginPage() {
             navigate('/profile');
         }
     }, [initialize, isAuthenticated, navigate]);
+
+    const validateName = (val: string) => {
+        if (!val) { setNameError(''); return false; }
+        if (val.length < 2) { setNameError('Name must be at least 2 characters'); return false; }
+        setNameError(''); return true;
+    };
 
     const validateEmail = (val: string) => {
         if (!val) { setEmailError(''); return false; }
@@ -36,22 +48,54 @@ export default function LoginPage() {
         setPasswordError(''); return true;
     };
 
+    const validateConfirmPassword = (val: string) => {
+        if (!val) { setConfirmError(''); return false; }
+        if (val !== password) { setConfirmError('Passwords do not match'); return false; }
+        setConfirmError(''); return true;
+    };
+
+    const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value; setName(val); validateName(val); setFormError('');
+    };
+
     const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value; setEmail(val); validateEmail(val); setFormError('');
     };
 
     const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value; setPassword(val); validatePassword(val); setFormError('');
+        if (confirmPassword) validateConfirmPassword(confirmPassword);
+    };
+
+    const handleConfirmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value; setConfirmPassword(val); validateConfirmPassword(val); setFormError('');
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!validateEmail(email) || !validatePassword(password)) return;
-        setIsLoading(true); setFormError('');
-        try { await login(email, password); navigate('/profile'); }
-        catch { setFormError('Failed to login. Please check your credentials.'); }
-        finally { setIsLoading(false); }
+
+        const isNameValid = validateName(name);
+        const isEmailValid = validateEmail(email);
+        const isPasswordValid = validatePassword(password);
+        const isConfirmValid = validateConfirmPassword(confirmPassword);
+
+        if (!isNameValid || !isEmailValid || !isPasswordValid || !isConfirmValid) return;
+
+        setIsLoading(true);
+        setFormError('');
+
+        try {
+            await register(name, email, password);
+            navigate('/profile');
+        } catch {
+            setFormError('Failed to create account. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
     };
+
+    const isFormValid = name && email && password && confirmPassword &&
+        !nameError && !emailError && !passwordError && !confirmError;
 
     return (
         <div className="min-h-screen w-full bg-[#0a0a0a] flex items-center justify-center font-sans">
@@ -67,8 +111,8 @@ export default function LoginPage() {
                 {/* Form */}
                 <div className="space-y-6">
                     <div className="text-center">
-                        <h1 className="text-white text-xl font-medium">Sign in</h1>
-                        <p className="text-neutral-500 text-sm mt-1">Continue to your workspace</p>
+                        <h1 className="text-white text-xl font-medium">Create account</h1>
+                        <p className="text-neutral-500 text-sm mt-1">Start building with Deexen AI</p>
                     </div>
 
                     <form className="space-y-4" onSubmit={handleSubmit}>
@@ -80,6 +124,29 @@ export default function LoginPage() {
                         )}
 
                         <div className="space-y-3">
+                            {/* Name */}
+                            <div>
+                                <label htmlFor="name" className="block text-sm text-neutral-400 mb-1.5">
+                                    Full Name
+                                </label>
+                                <div className="relative">
+                                    <Input
+                                        id="name"
+                                        type="text"
+                                        required
+                                        placeholder="John Doe"
+                                        className={`w-full h-10 px-3 bg-[#141414] border-neutral-800 rounded text-white text-sm placeholder:text-neutral-600 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-colors ${nameError ? 'border-red-500/50' : ''}`}
+                                        value={name}
+                                        onChange={handleNameChange}
+                                    />
+                                    {name && !nameError && (
+                                        <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+                                    )}
+                                </div>
+                                {nameError && <p className="mt-1 text-xs text-red-400">{nameError}</p>}
+                            </div>
+
+                            {/* Email */}
                             <div>
                                 <label htmlFor="email" className="block text-sm text-neutral-400 mb-1.5">
                                     Email
@@ -101,25 +168,52 @@ export default function LoginPage() {
                                 {emailError && <p className="mt-1 text-xs text-red-400">{emailError}</p>}
                             </div>
 
+                            {/* Password */}
                             <div>
-                                <div className="flex items-center justify-between mb-1.5">
-                                    <label htmlFor="password" className="text-sm text-neutral-400">
-                                        Password
-                                    </label>
-                                    <a href="#" className="text-xs text-neutral-500 hover:text-orange-500 transition-colors">
-                                        Forgot?
-                                    </a>
+                                <label htmlFor="password" className="block text-sm text-neutral-400 mb-1.5">
+                                    Password
+                                </label>
+                                <div className="relative">
+                                    <Input
+                                        id="password"
+                                        type={showPassword ? 'text' : 'password'}
+                                        required
+                                        placeholder="••••••••"
+                                        className={`w-full h-10 px-3 pr-10 bg-[#141414] border-neutral-800 rounded text-white text-sm placeholder:text-neutral-600 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-colors ${passwordError ? 'border-red-500/50' : ''}`}
+                                        value={password}
+                                        onChange={handlePasswordChange}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300"
+                                    >
+                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
                                 </div>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    required
-                                    placeholder="••••••••"
-                                    className={`w-full h-10 px-3 bg-[#141414] border-neutral-800 rounded text-white text-sm placeholder:text-neutral-600 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-colors ${passwordError ? 'border-red-500/50' : ''}`}
-                                    value={password}
-                                    onChange={handlePasswordChange}
-                                />
                                 {passwordError && <p className="mt-1 text-xs text-red-400">{passwordError}</p>}
+                            </div>
+
+                            {/* Confirm Password */}
+                            <div>
+                                <label htmlFor="confirmPassword" className="block text-sm text-neutral-400 mb-1.5">
+                                    Confirm Password
+                                </label>
+                                <div className="relative">
+                                    <Input
+                                        id="confirmPassword"
+                                        type={showPassword ? 'text' : 'password'}
+                                        required
+                                        placeholder="••••••••"
+                                        className={`w-full h-10 px-3 bg-[#141414] border-neutral-800 rounded text-white text-sm placeholder:text-neutral-600 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-colors ${confirmError ? 'border-red-500/50' : ''}`}
+                                        value={confirmPassword}
+                                        onChange={handleConfirmChange}
+                                    />
+                                    {confirmPassword && !confirmError && password === confirmPassword && (
+                                        <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+                                    )}
+                                </div>
+                                {confirmError && <p className="mt-1 text-xs text-red-400">{confirmError}</p>}
                             </div>
                         </div>
 
@@ -127,9 +221,9 @@ export default function LoginPage() {
                             type="submit"
                             className="w-full h-10 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded transition-colors"
                             isLoading={isLoading}
-                            disabled={!!emailError || !!passwordError || !email || !password}
+                            disabled={!isFormValid}
                         >
-                            Continue
+                            Create Account
                         </Button>
                     </form>
 
@@ -154,15 +248,18 @@ export default function LoginPage() {
 
                     {/* Footer */}
                     <p className="text-center text-sm text-neutral-500">
-                        Don't have an account?{' '}
-                        <Link to="/signup" className="text-orange-500 hover:underline">Sign up</Link>
+                        Already have an account?{' '}
+                        <Link to="/login" className="text-orange-500 hover:underline">Sign in</Link>
+                    </p>
+
+                    {/* Terms */}
+                    <p className="text-center text-xs text-neutral-600">
+                        By creating an account, you agree to our{' '}
+                        <a href="#" className="text-neutral-500 hover:text-orange-500">Terms of Service</a>
+                        {' '}and{' '}
+                        <a href="#" className="text-neutral-500 hover:text-orange-500">Privacy Policy</a>
                     </p>
                 </div>
-
-                {/* Demo note */}
-                <p className="text-center text-xs text-neutral-600 mt-6">
-                    Demo: any valid email + password (6+ chars)
-                </p>
             </div>
         </div>
     );
