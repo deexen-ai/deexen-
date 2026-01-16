@@ -1,28 +1,25 @@
 import { create } from 'zustand';
-
-interface User {
-    id: string;
-    name: string;
-    email: string;
-    avatar?: string;
-    joinDate?: string;
-    lastActive?: string;
-    projectCount?: number;
-}
+import { authService, type User } from '@/services/authService';
 
 interface AuthState {
     user: User | null;
     token: string | null;
     isAuthenticated: boolean;
+    isLoading: boolean;
+    error: string | null;
     login: (email: string, password: string) => Promise<void>;
+    register: (name: string, email: string, password: string) => Promise<void>;
     logout: () => void;
     initialize: () => void;
+    clearError: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
     user: null,
     token: null,
     isAuthenticated: false,
+    isLoading: false,
+    error: null,
 
     initialize: () => {
         const token = localStorage.getItem('deexen_token');
@@ -31,50 +28,65 @@ export const useAuthStore = create<AuthState>((set) => ({
             set({
                 token,
                 user: JSON.parse(userStr),
-                isAuthenticated: true
+                isAuthenticated: true,
             });
         }
     },
 
     login: async (email, password) => {
-        // Mock API call
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                if (password.length < 6) {
-                    reject(new Error('Password too short (mock backend check)'));
-                    return;
-                }
+        set({ isLoading: true, error: null });
 
-                // Mock successful response
-                const mockUser = {
-                    id: '1',
-                    name: 'Demo User',
-                    email: email,
-                    avatar: 'https://ui-avatars.com/api/?name=Demo+User&background=7c3aed&color=fff',
-                    joinDate: 'Jan 2026',
-                    lastActive: 'Just now',
-                    projectCount: 12
-                };
-                const mockToken = 'mock-jwt-token-' + Math.random().toString(36).substring(2);
+        try {
+            const { user, token } = await authService.login(email, password);
 
-                // Persist
-                localStorage.setItem('deexen_token', mockToken);
-                localStorage.setItem('deexen_user', JSON.stringify(mockUser));
+            // Persist to localStorage
+            localStorage.setItem('deexen_token', token);
+            localStorage.setItem('deexen_user', JSON.stringify(user));
 
-                set({
-                    user: mockUser,
-                    token: mockToken,
-                    isAuthenticated: true,
-                });
-                resolve();
-            }, 1000);
-        });
+            set({
+                user,
+                token,
+                isAuthenticated: true,
+                isLoading: false,
+            });
+        } catch (error: unknown) {
+            const message = error && typeof error === 'object' && 'message' in error
+                ? (error as { message: string }).message
+                : 'Login failed';
+            set({ error: message, isLoading: false });
+            throw error;
+        }
+    },
+
+    register: async (name, email, password) => {
+        set({ isLoading: true, error: null });
+
+        try {
+            const { user, token } = await authService.register({ name, email, password });
+
+            // Persist to localStorage
+            localStorage.setItem('deexen_token', token);
+            localStorage.setItem('deexen_user', JSON.stringify(user));
+
+            set({
+                user,
+                token,
+                isAuthenticated: true,
+                isLoading: false,
+            });
+        } catch (error: unknown) {
+            const message = error && typeof error === 'object' && 'message' in error
+                ? (error as { message: string }).message
+                : 'Registration failed';
+            set({ error: message, isLoading: false });
+            throw error;
+        }
     },
 
     logout: () => {
-        localStorage.removeItem('deexen_token');
-        localStorage.removeItem('deexen_user');
-        set({ user: null, token: null, isAuthenticated: false });
+        authService.logout();
+        set({ user: null, token: null, isAuthenticated: false, error: null });
     },
-}));
 
+    clearError: () => set({ error: null }),
+}));

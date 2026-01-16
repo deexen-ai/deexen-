@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -10,8 +10,7 @@ interface TerminalLine {
 export default function Terminal() {
     const [activeTab, setActiveTab] = useState<'terminal' | 'output' | 'problems'>('terminal');
     const [history, setHistory] = useState<TerminalLine[]>([
-        { id: 1, content: <span>Welcome to Deexen Terminal v1.0.0</span> },
-        { id: 2, content: <span>Type 'help' for available commands.</span> }
+        { id: 1, content: <span className="text-neutral-500">Welcome to Deexen Terminal</span> },
     ]);
     const [input, setInput] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
@@ -24,44 +23,39 @@ export default function Terminal() {
     }, [history, activeTab]);
 
     const handleCommand = (cmd: string) => {
-        const newHistory = [...history, { id: Date.now(), content: <span><span className="text-[#3b82f6]">➜</span> <span className="text-[#9ca3af]">{cmd}</span></span> }];
-
+        const newHistory = [...history, { id: Date.now(), content: <span><span className="text-orange-500">$</span> <span className="text-neutral-300">{cmd}</span></span> }];
         const lowerCmd = cmd.trim().toLowerCase();
 
         let response: React.ReactNode = null;
 
         if (lowerCmd === 'help') {
             response = (
-                <div className="flex flex-col text-[#4b5563]">
-                    <span>Available commands:</span>
-                    <span className="pl-4">ls      - List files</span>
-                    <span className="pl-4">clear   - Clear terminal</span>
-                    <span className="pl-4">npm run - Execute scripts (mock)</span>
-                    <span className="pl-4">git     - Git commands (mock)</span>
+                <div className="flex flex-col text-neutral-500 pl-2">
+                    <span>ls      - List files</span>
+                    <span>clear   - Clear terminal</span>
+                    <span>npm run - Execute scripts</span>
                 </div>
             );
         } else if (lowerCmd === 'ls') {
             response = (
-                <div className="flex space-x-4 text-[#3b82f6]">
+                <div className="flex gap-4 text-neutral-400 pl-2">
                     <span>src/</span>
                     <span>public/</span>
                     <span>package.json</span>
-                    <span>README.md</span>
                 </div>
             );
         } else if (lowerCmd === 'clear') {
             setHistory([]);
             return;
         } else if (lowerCmd === '') {
-            // Do nothing
+            // empty
         } else {
-            response = <span className="text-red-400">Command not found: {cmd}</span>;
+            response = <span className="text-red-400 pl-2">Command not found: {cmd}</span>;
         }
 
         if (response) {
             newHistory.push({ id: Date.now() + 1, content: response });
         }
-
         setHistory(newHistory);
     };
 
@@ -74,54 +68,49 @@ export default function Terminal() {
 
     return (
         <div
-            className="h-full bg-white border-t border-[#e5e7eb] flex flex-col font-mono text-sm overflow-hidden"
+            className="h-full bg-[#0a0a0a] flex flex-col font-mono text-xs overflow-hidden"
             onClick={() => activeTab === 'terminal' && inputRef.current?.focus()}
         >
-            <div className="h-9 px-4 flex items-center border-b border-[#e5e7eb] bg-[#f8f9fa] flex-shrink-0 select-none">
-                <div
-                    onClick={() => setActiveTab('terminal')}
-                    className={cn("flex items-center space-x-2 text-xs uppercase font-bold h-full px-2 cursor-pointer transition-colors border-b-2", activeTab === 'terminal' ? "border-[#7c3aed] text-[#1f2937]" : "border-transparent text-[#6b7280] hover:text-[#1f2937]")}
-                >
-                    <span>Terminal</span>
-                </div>
-                <div
-                    onClick={() => setActiveTab('output')}
-                    className={cn("flex items-center space-x-2 text-xs uppercase font-bold h-full px-2 cursor-pointer transition-colors border-b-2", activeTab === 'output' ? "border-[#7c3aed] text-[#1f2937]" : "border-transparent text-[#6b7280] hover:text-[#1f2937]")}
-                >
-                    <span>Output</span>
-                </div>
-                <div
-                    onClick={() => setActiveTab('problems')}
-                    className={cn("flex items-center space-x-2 text-xs uppercase font-bold h-full px-2 cursor-pointer transition-colors border-b-2", activeTab === 'problems' ? "border-[#7c3aed] text-[#1f2937]" : "border-transparent text-[#6b7280] hover:text-[#1f2937]")}
-                >
-                    <span>Problems</span>
-                    {activeTab !== 'problems' && <span className="ml-1 rounded-full bg-[#7c3aed] text-white text-[9px] w-4 h-4 flex items-center justify-center">0</span>}
-                </div>
-
+            {/* Tabs */}
+            <div className="h-9 px-2 flex items-center border-b border-neutral-800 bg-[#0f0f0f] flex-shrink-0 select-none gap-1">
+                {['terminal', 'output', 'problems'].map((tab) => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab as any)}
+                        className={cn(
+                            "px-3 h-7 text-xs capitalize transition-colors rounded",
+                            activeTab === tab
+                                ? "bg-neutral-800 text-white"
+                                : "text-neutral-500 hover:text-neutral-300"
+                        )}
+                    >
+                        {tab}
+                        {tab === 'problems' && <span className="ml-1.5 text-neutral-600">0</span>}
+                    </button>
+                ))}
                 <div className="flex-1" />
-                <div className="flex items-center cursor-pointer hover:bg-[#e5e7eb] p-1 rounded">
-                    <Plus className="h-4 w-4 text-[#6b7280]" />
-                </div>
+                <button className="p-1.5 text-neutral-600 hover:text-neutral-400 transition-colors">
+                    <Plus className="h-3.5 w-3.5" />
+                </button>
             </div>
 
-            {/* Tab Content */}
-            <div className="flex-1 p-4 overflow-y-auto cursor-text text-[#1f2937]">
-
+            {/* Content */}
+            <div className="flex-1 p-3 overflow-y-auto cursor-text text-neutral-300">
                 {activeTab === 'terminal' && (
                     <>
                         {history.map((line) => (
-                            <div key={line.id} className="mb-1 text-[#1f2937]">
+                            <div key={line.id} className="mb-1 leading-relaxed">
                                 {line.content}
                             </div>
                         ))}
                         <div className="flex items-center">
-                            <span className="text-[#3b82f6] mr-2">➜</span>
-                            <span className="text-[#10b981] mr-2">deexen-frontend</span>
-                            <span className="text-[#1f2937] mr-2">git:(<span className="text-[#7c3aed]">main</span>)</span>
+                            <span className="text-orange-500 mr-1">$</span>
+                            <span className="text-green-500 mr-1">deexen</span>
+                            <span className="text-neutral-600 mr-2">main</span>
                             <input
                                 ref={inputRef}
                                 type="text"
-                                className="bg-transparent border-none outline-none text-[#1f2937] flex-1"
+                                className="bg-transparent border-none outline-none text-neutral-300 flex-1 caret-orange-500"
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={handleKeyDown}
@@ -133,19 +122,17 @@ export default function Terminal() {
                 )}
 
                 {activeTab === 'output' && (
-                    <div className="text-[#6b7280] italic">
-                        [Info] Deexen Language Server initialized successfully.<br />
-                        [Info] Loaded 2 extensions.<br />
-                        [Info] File system watcher active.
+                    <div className="text-neutral-600">
+                        [info] Language server initialized<br />
+                        [info] 2 extensions loaded
                     </div>
                 )}
 
                 {activeTab === 'problems' && (
-                    <div className="flex flex-col items-center justify-center h-full text-[#9ca3af]">
-                        <span>No problems have been detected in the workspace.</span>
+                    <div className="flex items-center justify-center h-full text-neutral-600">
+                        No problems detected
                     </div>
                 )}
-
             </div>
         </div>
     );

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import Editor, { useMonaco } from '@monaco-editor/react';
-import { X, FileCode, File } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import Editor from '@monaco-editor/react';
+import { X, FileCode } from 'lucide-react';
 import { useFileStore } from '@/stores/useFileStore';
 import { cn } from '@/utils/cn';
 
@@ -9,10 +9,7 @@ export default function CodeEditor() {
     const [activeContent, setActiveContent] = useState('');
     const [activeLanguage, setActiveLanguage] = useState('typescript');
 
-    // Helper to find file content and language
-    // In a real app with flat file list this is O(1), here tree search O(N)
     const findFileContent = (fileId: string) => {
-        // DFS to find file
         const find = (nodes: any[]): any => {
             for (const node of nodes) {
                 if (node.id === fileId) return node;
@@ -31,7 +28,6 @@ export default function CodeEditor() {
             const file = findFileContent(activeFileId);
             if (file) {
                 setActiveContent(file.content || '');
-                // Simple language detection
                 if (file.name.endsWith('.tsx') || file.name.endsWith('.ts')) setActiveLanguage('typescript');
                 else if (file.name.endsWith('.json')) setActiveLanguage('json');
                 else if (file.name.endsWith('.css')) setActiveLanguage('css');
@@ -43,19 +39,17 @@ export default function CodeEditor() {
 
     if (!activeFileId || openFiles.length === 0) {
         return (
-            <div className="h-full bg-white flex flex-col items-center justify-center text-[#9ca3af]">
-                <div className="mb-4 bg-[#f3f4f6] p-4 rounded-full">
-                    <FileCode className="h-12 w-12 text-[#d1d5db]" />
-                </div>
-                <p>Select a file to start coding</p>
+            <div className="h-full bg-[#0a0a0a] flex flex-col items-center justify-center text-neutral-600">
+                <FileCode className="h-12 w-12 mb-3 opacity-30" />
+                <p className="text-sm">Select a file to start editing</p>
             </div>
         )
     }
 
     return (
-        <div className="h-full bg-white flex flex-col relative w-full overflow-hidden">
-            {/* Tabs Bar */}
-            <div className="h-9 flex bg-[#f3f4f6] border-b border-[#e5e7eb] overflow-x-auto no-scrollbar">
+        <div className="h-full bg-[#0a0a0a] flex flex-col w-full overflow-hidden">
+            {/* Tabs */}
+            <div className="h-9 flex bg-[#0f0f0f] border-b border-neutral-800 overflow-x-auto">
                 {openFiles.map((fileId) => {
                     const file = findFileContent(fileId);
                     const isActive = fileId === activeFileId;
@@ -63,15 +57,20 @@ export default function CodeEditor() {
                         <div
                             key={fileId}
                             className={cn(
-                                "h-full px-3 flex items-center border-r border-[#e5e7eb] text-sm min-w-[120px] max-w-[200px] cursor-pointer group select-none",
-                                isActive ? "bg-white border-t-2 border-t-[#7c3aed] text-[#1f2937]" : "bg-[#f3f4f6] text-[#6b7280] hover:bg-[#e5e7eb]"
+                                "h-full px-3 flex items-center text-xs cursor-pointer group select-none border-r border-neutral-800",
+                                isActive
+                                    ? "bg-[#0a0a0a] text-white border-t-2 border-t-orange-500"
+                                    : "bg-[#0f0f0f] text-neutral-500 hover:text-neutral-300"
                             )}
                             onClick={() => selectFile(fileId)}
                         >
-                            <FileCode className={cn("h-4 w-4 mr-2", isActive ? "text-[#7c3aed]" : "text-[#9ca3af]")} />
-                            <span className="flex-1 truncate">{file?.name || fileId}</span>
+                            <FileCode className={cn("h-3.5 w-3.5 mr-2", isActive ? "text-orange-500" : "text-neutral-600")} />
+                            <span className="truncate max-w-[120px]">{file?.name || fileId}</span>
                             <div
-                                className={cn("ml-2 p-0.5 rounded-md hover:bg-[#e5e7eb]", !isActive && "opacity-0 group-hover:opacity-100")}
+                                className={cn(
+                                    "ml-2 p-0.5 rounded hover:bg-neutral-700",
+                                    !isActive && "opacity-0 group-hover:opacity-100"
+                                )}
                                 onClick={(e) => { e.stopPropagation(); closeFile(fileId); }}
                             >
                                 <X className="h-3 w-3" />
@@ -81,43 +80,44 @@ export default function CodeEditor() {
                 })}
             </div>
 
-            {/* Editor Area */}
+            {/* Editor */}
             <div className="flex-1 w-full">
                 <Editor
                     height="100%"
                     language={activeLanguage}
                     value={activeContent}
-                    theme="deexen-light"
+                    theme="deexen-dark"
                     onChange={(value) => {
                         if (activeFileId && value !== undefined) {
-                            setActiveContent(value); // Local state for speed
-                            updateFileContent(activeFileId, value); // Store update
+                            setActiveContent(value);
+                            updateFileContent(activeFileId, value);
                         }
                     }}
                     options={{
                         minimap: { enabled: false },
-                        fontSize: 14,
-                        fontFamily: 'JetBrains Mono, Menlo, monospace',
+                        fontSize: 13,
+                        fontFamily: 'JetBrains Mono, Consolas, monospace',
                         scrollBeyondLastLine: false,
                         automaticLayout: true,
-                        padding: { top: 16 },
-                        wordWrap: 'on',
+                        padding: { top: 12 },
+                        lineNumbers: 'on',
+                        renderLineHighlight: 'line',
+                        cursorBlinking: 'smooth',
+                        smoothScrolling: true,
                     }}
-                    // Customize theme to match Deexen colors
                     beforeMount={(monaco) => {
-                        monaco.editor.defineTheme('deexen-light', {
-                            base: 'vs', // Light theme base
+                        monaco.editor.defineTheme('deexen-dark', {
+                            base: 'vs-dark',
                             inherit: true,
                             rules: [],
                             colors: {
-                                'editor.background': '#ffffff',
-                                'editor.lineHighlightBackground': '#f3f4f6',
-                                'editorGutter.background': '#ffffff',
+                                'editor.background': '#0a0a0a',
+                                'editor.lineHighlightBackground': '#141414',
+                                'editorGutter.background': '#0a0a0a',
+                                'editorCursor.foreground': '#f97316',
+                                'editor.selectionBackground': '#f9731630',
                             }
                         });
-                    }}
-                    onMount={(editor, monaco) => {
-                        monaco.editor.setTheme('deexen-light');
                     }}
                 />
             </div>
