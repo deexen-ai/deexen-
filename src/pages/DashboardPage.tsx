@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    FolderOpen, LogOut, Plus,
-    Settings, Search, Star, MoreHorizontal,
+    FolderOpen, Plus,
+    Search, Star, MoreHorizontal,
     ExternalLink
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
@@ -48,17 +48,14 @@ const projects = [
     },
 ];
 
+import Header from '@/components/layout/Header';
+
 export default function DashboardPage() {
     const navigate = useNavigate();
-    const { user, logout } = useAuthStore();
+    const { user } = useAuthStore();
     const [searchQuery, setSearchQuery] = useState('');
 
-    const handleLogout = () => {
-        logout();
-        navigate('/login');
-    };
-
-    const handleOpenWorkspace = (projectId?: string) => {
+    const handleOpenWorkspace = () => {
         navigate('/workspace');
     };
 
@@ -71,27 +68,7 @@ export default function DashboardPage() {
 
     return (
         <div className="min-h-screen w-full bg-[#0a0a0a] font-sans text-white">
-            {/* Header */}
-            <header className="h-12 border-b border-neutral-800 flex items-center justify-between px-4">
-                <div className="flex items-center space-x-3">
-                    <img src="/deexenlogo.png" alt="Deexen" className="h-6" />
-                    <span className="text-sm font-medium">Deexen</span>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                    <button className="p-1.5 text-neutral-500 hover:text-white hover:bg-neutral-800 rounded transition-colors">
-                        <Settings className="w-4 h-4" />
-                    </button>
-                    <div className="w-px h-4 bg-neutral-800" />
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center space-x-2 px-2 py-1 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded text-sm transition-colors"
-                    >
-                        <img src={user.avatar} alt="" className="w-5 h-5 rounded-sm bg-neutral-700" />
-                        <span className="text-xs">{user.name}</span>
-                    </button>
-                </div>
-            </header>
+            <Header />
 
             {/* Main */}
             <div className="max-w-4xl mx-auto py-8 px-6">
@@ -133,7 +110,7 @@ export default function DashboardPage() {
                     {filteredProjects.map((project, i) => (
                         <div
                             key={project.id}
-                            onClick={() => handleOpenWorkspace(project.id)}
+                            onClick={() => handleOpenWorkspace()}
                             className={cn(
                                 "h-14 flex items-center px-4 cursor-pointer transition-colors group",
                                 "hover:bg-[#141414]",
@@ -190,13 +167,6 @@ export default function DashboardPage() {
                 {/* Footer info */}
                 <div className="mt-4 flex items-center justify-between text-xs text-neutral-600">
                     <span>{projects.length} projects</span>
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center space-x-1 hover:text-neutral-400 transition-colors"
-                    >
-                        <LogOut className="w-3 h-3" />
-                        <span>Sign out</span>
-                    </button>
                 </div>
             </div>
         </div>
