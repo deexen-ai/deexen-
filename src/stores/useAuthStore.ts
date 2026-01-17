@@ -12,6 +12,7 @@ interface AuthState {
     logout: () => void;
     initialize: () => void;
     clearError: () => void;
+    updateUser: (updates: Partial<User>) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -86,6 +87,15 @@ export const useAuthStore = create<AuthState>((set) => ({
     logout: () => {
         authService.logout();
         set({ user: null, token: null, isAuthenticated: false, error: null });
+    },
+
+    updateUser: (updates) => {
+        set((state) => {
+            if (!state.user) return state;
+            const updatedUser = { ...state.user, ...updates };
+            localStorage.setItem('deexen_user', JSON.stringify(updatedUser));
+            return { user: updatedUser };
+        });
     },
 
     clearError: () => set({ error: null }),
