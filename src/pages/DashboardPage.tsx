@@ -3,60 +3,32 @@ import { useNavigate } from 'react-router-dom';
 import {
     FolderOpen, Plus,
     Search, Star, MoreHorizontal,
-    ExternalLink
+    ExternalLink, Sparkles
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useAIStore } from '@/stores/useAIStore'; // Import AI Store
 
-// Mock Data for Projects
-const projects = [
-    {
-        id: '1',
-        name: 'deexen-frontend',
-        description: 'Main frontend repository for Deexen IDE',
-        files: 24,
-        lastModified: '2h ago',
-        language: 'TypeScript',
-        starred: true
-    },
-    {
-        id: '2',
-        name: 'swapcampus',
-        description: 'University marketplace platform',
-        files: 156,
-        lastModified: '1d ago',
-        language: 'React',
-        starred: false
-    },
-    {
-        id: '3',
-        name: 'haven',
-        description: 'Personal wellness tracker',
-        files: 43,
-        lastModified: '5d ago',
-        language: 'Python',
-        starred: true
-    },
-    {
-        id: '4',
-        name: 'api-gateway',
-        description: 'Microservices API gateway',
-        files: 18,
-        lastModified: '1w ago',
-        language: 'Go',
-        starred: false
-    },
-];
+import { projects } from '@/data/projects';
 
 import Header from '@/components/layout/Header';
+import AiAssistant from '@/components/AiAssistant/AiAssistant';
 
 export default function DashboardPage() {
     const navigate = useNavigate();
     const { user } = useAuthStore();
+    const { setChatOpen, setTriggerMessage } = useAIStore(); // Use hooks
     const [searchQuery, setSearchQuery] = useState('');
 
     const handleOpenWorkspace = () => {
         navigate('/workspace');
+    };
+
+    const handleExplainProject = (projectName: string, e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent opening workspace
+        setTriggerMessage(`Explain ${projectName}`);
+        setChatOpen(true);
+        // We rely on AiAssistant to detect the open state change or trigger change
     };
 
     if (!user) return null;
@@ -103,7 +75,7 @@ export default function DashboardPage() {
                         <div className="flex-1">Name</div>
                         <div className="w-24 text-center">Files</div>
                         <div className="w-24 text-center">Updated</div>
-                        <div className="w-20"></div>
+                        <div className="w-28 pl-4">Actions</div>
                     </div>
 
                     {/* Rows */}
@@ -140,7 +112,14 @@ export default function DashboardPage() {
                             <div className="w-24 text-center text-sm text-neutral-500">
                                 {project.lastModified}
                             </div>
-                            <div className="w-20 flex items-center justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="w-28 flex items-center justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                    onClick={(e) => handleExplainProject(project.name, e)}
+                                    title="Explain Project with AI"
+                                    className="p-1.5 text-neutral-500 hover:text-violet-400 hover:bg-neutral-700/50 rounded transition-colors"
+                                >
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                </button>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); }}
                                     className="p-1.5 text-neutral-500 hover:text-white hover:bg-neutral-700 rounded transition-colors"
@@ -169,6 +148,7 @@ export default function DashboardPage() {
                     <span>{projects.length} projects</span>
                 </div>
             </div>
+            <AiAssistant />
         </div>
     );
 }
