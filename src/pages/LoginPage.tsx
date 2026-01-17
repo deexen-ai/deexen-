@@ -48,7 +48,7 @@ export default function LoginPage() {
         e.preventDefault();
         if (!validateEmail(email) || !validatePassword(password)) return;
         setIsLoading(true); setFormError('');
-        try { await login(email, password); navigate('/profile'); }
+        try { await login(email, password); navigate('/dashboard'); }
         catch { setFormError('Failed to login. Please check your credentials.'); }
         finally { setIsLoading(false); }
     };
