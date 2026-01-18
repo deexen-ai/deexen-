@@ -1,5 +1,5 @@
 # Deexen: AI-Powered IDE for Learning and Development
-
+    
 ![Deexen Banner](public/banner.png)
 
 **Deexen** is a next-generation AI-powered IDE (Integrated Development Environment) built to make coding easier and faster to learn. Unlike traditional IDEs, Deexen integrates AI directly into the editor to provide guided learning, intelligent assistance, and multiple operating modes tailored to your growth.
