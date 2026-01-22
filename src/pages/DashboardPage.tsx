@@ -3,13 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import {
     FolderOpen, Plus,
     Search, Star, MoreHorizontal,
-    ExternalLink, Sparkles,
-    Moon, Sun
+    ExternalLink, Sparkles
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { useAIStore } from '@/stores/useAIStore'; // Import AI Store
-import { useThemeStore } from '@/stores/useThemeStore';
+import { useAIStore } from '@/stores/useAIStore';
 
 import { projects } from '@/data/projects';
 
@@ -19,8 +17,7 @@ import AiAssistant from '@/components/AiAssistant/AiAssistant';
 export default function DashboardPage() {
     const navigate = useNavigate();
     const { user } = useAuthStore();
-    const { setChatOpen, setTriggerMessage } = useAIStore(); // Use hooks
-    const { theme, toggleTheme } = useThemeStore();
+    const { setChatOpen, setTriggerMessage } = useAIStore();
     const [searchQuery, setSearchQuery] = useState('');
 
     const handleOpenWorkspace = () => {
@@ -65,23 +62,10 @@ export default function DashboardPage() {
                             className="w-64 h-8 pl-9 pr-3 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-neutral-500 transition-colors"
                         />
                     </div>
-                    <div className="flex items-center space-x-3">
-                        <button
-                            onClick={toggleTheme}
-                            className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] rounded-full transition-colors"
-                            title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
-                        >
-                            {theme === 'dark' ? (
-                                <Sun className="w-5 h-5" />
-                            ) : (
-                                <Moon className="w-5 h-5" />
-                            )}
-                        </button>
-                        <button className="flex items-center space-x-1.5 h-8 px-3 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded transition-colors">
-                            <Plus className="w-4 h-4" />
-                            <span>New Project</span>
-                        </button>
-                    </div>
+                    <button className="flex items-center space-x-1.5 h-8 px-3 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded transition-colors">
+                        <Plus className="w-4 h-4" />
+                        <span>New Project</span>
+                    </button>
                 </div>
 
                 {/* Projects List */}
