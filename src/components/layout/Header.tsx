@@ -40,17 +40,17 @@ export default function Header() {
     if (!user) return null;
 
     return (
-        <header className="h-12 border-b border-neutral-800 flex items-center justify-between px-4 bg-[#0a0a0a] flex-shrink-0 relative z-50">
+        <header className="h-12 border-b border-[var(--border-default)] flex items-center justify-between px-4 bg-[var(--bg-canvas)] flex-shrink-0 relative z-50">
             <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
                 <img src="/deexenlogo.png" alt="Deexen" className="h-6" />
-                <span className="text-sm font-medium text-white">Deexen</span>
+                <span className="text-sm font-medium text-[var(--text-primary)]">Deexen</span>
             </div>
 
             <div className="flex items-center space-x-2">
-                <button className="p-1.5 text-neutral-500 hover:text-white hover:bg-neutral-800 rounded transition-colors" title="Settings">
+                <button className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] rounded transition-colors" title="Settings">
                     <Settings className="w-4 h-4" />
                 </button>
-                <div className="w-px h-4 bg-neutral-800" />
+                <div className="w-px h-4 bg-[var(--border-default)]" />
 
                 {/* User Dropdown */}
                 <div className="relative" ref={dropdownRef}>
@@ -59,25 +59,25 @@ export default function Header() {
                         className={cn(
                             "flex items-center space-x-2 px-2 py-1 rounded text-sm transition-colors",
                             isDropdownOpen
-                                ? "bg-neutral-800 text-white"
-                                : "text-neutral-400 hover:text-white hover:bg-neutral-800"
+                                ? "bg-[var(--bg-surface-hover)] text-[var(--text-primary)]"
+                                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)]"
                         )}
                     >
-                        <img src={user.avatar} alt="" className="w-5 h-5 rounded-sm bg-neutral-700" />
+                        <img src={user.avatar} alt="" className="w-5 h-5 rounded-sm bg-[var(--bg-surface)]" />
                         <span className="text-xs max-w-[100px] truncate hidden sm:block">{user.name}</span>
                         <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", isDropdownOpen && "rotate-180")} />
                     </button>
 
                     {isDropdownOpen && (
-                        <div className="absolute right-0 top-full mt-1 w-48 bg-[#0f0f0f] border border-neutral-800 rounded-md shadow-xl overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-100">
-                            <div className="px-3 py-2 border-b border-neutral-800 mb-1">
-                                <p className="text-xs font-medium text-white truncate">{user.name}</p>
-                                <p className="text-[10px] text-neutral-500 truncate">{user.email}</p>
+                        <div className="absolute right-0 top-full mt-1 w-48 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-md shadow-xl overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-100">
+                            <div className="px-3 py-2 border-b border-[var(--border-default)] mb-1">
+                                <p className="text-xs font-medium text-[var(--text-primary)] truncate">{user.name}</p>
+                                <p className="text-[10px] text-[var(--text-secondary)] truncate">{user.email}</p>
                             </div>
 
                             <button
                                 onClick={() => { setIsDropdownOpen(false); navigate('/profile'); }}
-                                className="w-full text-left px-3 py-1.5 text-xs text-neutral-400 hover:text-white hover:bg-neutral-800 flex items-center space-x-2"
+                                className="w-full text-left px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] flex items-center space-x-2"
                             >
                                 <User className="w-3.5 h-3.5" />
                                 <span>Profile</span>
@@ -85,17 +85,17 @@ export default function Header() {
 
                             <button
                                 onClick={() => { setIsDropdownOpen(false); }}
-                                className="w-full text-left px-3 py-1.5 text-xs text-neutral-400 hover:text-white hover:bg-neutral-800 flex items-center space-x-2"
+                                className="w-full text-left px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] flex items-center space-x-2"
                             >
                                 <Settings className="w-3.5 h-3.5" />
                                 <span>Settings</span>
                             </button>
 
-                            <div className="h-px bg-neutral-800 my-1" />
+                            <div className="h-px bg-[var(--border-default)] my-1" />
 
                             <button
                                 onClick={handleLogout}
-                                className="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-neutral-800 hover:text-red-300 flex items-center space-x-2"
+                                className="w-full text-left px-3 py-1.5 text-xs text-red-500 hover:bg-[var(--bg-surface-hover)] hover:text-red-600 flex items-center space-x-2"
                             >
                                 <LogOut className="w-3.5 h-3.5" />
                                 <span>Sign out</span>

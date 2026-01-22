@@ -70,7 +70,7 @@ const FileTreeItem = ({ node, level, onContextMenu, renamingId, onRenameSubmit }
             <div
                 className={cn(
                     "flex items-center h-6 pr-2 cursor-pointer transition-colors group",
-                    isSelected && !isRenaming ? "bg-neutral-800 text-white" : "text-neutral-400 hover:bg-neutral-800/50 hover:text-neutral-300"
+                    isSelected && !isRenaming ? "bg-[var(--bg-surface-hover)] text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)]"
                 )}
                 style={{ paddingLeft: `${indent + 8}px` }}
                 onClick={handleClick}
@@ -84,7 +84,7 @@ const FileTreeItem = ({ node, level, onContextMenu, renamingId, onRenameSubmit }
                 {/* Icon */}
                 <span className="mr-1.5 flex-shrink-0 w-5 flex items-center justify-center">
                     {node.type === 'folder' ? (
-                        <Folder className={cn("h-3.5 w-3.5", node.isOpen ? "text-orange-400" : "text-neutral-500")} />
+                        <Folder className={cn("h-3.5 w-3.5", node.isOpen ? "text-orange-400" : "text-[var(--text-secondary)]")} />
                     ) : (
                         getFileIcon(node.name)
                     )}
@@ -94,7 +94,7 @@ const FileTreeItem = ({ node, level, onContextMenu, renamingId, onRenameSubmit }
                 {isRenaming ? (
                     <input
                         ref={inputRef}
-                        className="bg-neutral-800 text-white border border-orange-500 px-1 h-5 text-xs flex-1 outline-none"
+                        className="bg-[var(--bg-surface)] text-[var(--text-primary)] border border-orange-500 px-1 h-5 text-xs flex-1 outline-none"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
                         onBlur={() => onRenameSubmit(node.id, editName)}
@@ -197,28 +197,28 @@ export default function FileExplorer() {
 
     return (
         <div
-            className="h-full bg-[#0f0f0f] flex flex-col relative"
+            className="h-full bg-[var(--bg-surface)] flex flex-col relative"
             onContextMenu={(e) => handleContextMenu(e, null)}
             ref={containerRef}
         >
             {/* Project Header */}
-            <div className="px-3 py-2 flex items-center justify-between text-xs text-neutral-400 cursor-pointer hover:bg-neutral-800 group">
+            <div className="px-3 py-2 flex items-center justify-between text-xs text-[var(--text-secondary)] cursor-pointer hover:bg-[var(--bg-surface-hover)] group">
                 <div className="flex items-center overflow-hidden">
                     <ChevronDown className="h-3 w-3 mr-1 flex-shrink-0" />
                     <span className="truncate font-medium">deexen-frontend</span>
                 </div>
 
                 <div className="flex items-center space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button title="New File" onClick={(e) => { e.stopPropagation(); handleAction('newFile'); }} className="p-1 hover:bg-neutral-700 rounded text-neutral-500 hover:text-neutral-300">
+                    <button title="New File" onClick={(e) => { e.stopPropagation(); handleAction('newFile'); }} className="p-1 hover:bg-[var(--bg-surface-hover)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                         <FilePlus className="h-3.5 w-3.5" />
                     </button>
-                    <button title="New Folder" onClick={(e) => { e.stopPropagation(); handleAction('newFolder'); }} className="p-1 hover:bg-neutral-700 rounded text-neutral-500 hover:text-neutral-300">
+                    <button title="New Folder" onClick={(e) => { e.stopPropagation(); handleAction('newFolder'); }} className="p-1 hover:bg-[var(--bg-surface-hover)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                         <FolderPlus className="h-3.5 w-3.5" />
                     </button>
-                    <button title="Refresh" onClick={(e) => { e.stopPropagation(); handleAction('refresh'); }} className="p-1 hover:bg-neutral-700 rounded text-neutral-500 hover:text-neutral-300">
+                    <button title="Refresh" onClick={(e) => { e.stopPropagation(); handleAction('refresh'); }} className="p-1 hover:bg-[var(--bg-surface-hover)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                         <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
                     </button>
-                    <button title="Collapse All" onClick={(e) => { e.stopPropagation(); handleAction('collapse'); }} className="p-1 hover:bg-neutral-700 rounded text-neutral-500 hover:text-neutral-300">
+                    <button title="Collapse All" onClick={(e) => { e.stopPropagation(); handleAction('collapse'); }} className="p-1 hover:bg-[var(--bg-surface-hover)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                         <Layers className="h-3.5 w-3.5" />
                     </button>
                 </div>
@@ -240,38 +240,38 @@ export default function FileExplorer() {
             {/* Context Menu */}
             {contextMenu && (
                 <div
-                    className="fixed bg-[#1a1a1a] border border-neutral-700 rounded shadow-xl py-1 z-50 min-w-[140px]"
+                    className="fixed bg-[var(--bg-surface)] border border-[var(--border-default)] rounded shadow-xl py-1 z-50 min-w-[140px]"
                     style={{ top: contextMenu.y, left: contextMenu.x }}
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <button className="w-full text-left px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700" onClick={() => handleAction('newFile')}>
+                    <button className="w-full text-left px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)]" onClick={() => handleAction('newFile')}>
                         New File
                     </button>
-                    <button className="w-full text-left px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700" onClick={() => handleAction('newFolder')}>
+                    <button className="w-full text-left px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)]" onClick={() => handleAction('newFolder')}>
                         New Folder
                     </button>
 
                     {contextMenu.nodeId && (
                         <>
-                            <div className="h-px bg-neutral-700 my-1" />
-                            <button className="w-full text-left px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700 flex items-center" onClick={() => handleAction('cut')}>
+                            <div className="h-px bg-[var(--border-default)] my-1" />
+                            <button className="w-full text-left px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)] flex items-center" onClick={() => handleAction('cut')}>
                                 <Scissors className="h-3 w-3 mr-2" /> Cut
                             </button>
-                            <button className="w-full text-left px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700 flex items-center" onClick={() => handleAction('copy')}>
+                            <button className="w-full text-left px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)] flex items-center" onClick={() => handleAction('copy')}>
                                 <Copy className="h-3 w-3 mr-2" /> Copy
                             </button>
                         </>
                     )}
 
-                    <button className="w-full text-left px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700 flex items-center" onClick={() => handleAction('paste')}>
+                    <button className="w-full text-left px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)] flex items-center" onClick={() => handleAction('paste')}>
                         <Clipboard className="h-3 w-3 mr-2" /> Paste
                     </button>
 
                     {contextMenu.nodeId && (
                         <>
-                            <div className="h-px bg-neutral-700 my-1" />
-                            <button className="w-full text-left px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700" onClick={() => handleAction('rename')}>Rename</button>
-                            <button className="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-neutral-700" onClick={() => handleAction('delete')}>
+                            <div className="h-px bg-[var(--border-default)] my-1" />
+                            <button className="w-full text-left px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)]" onClick={() => handleAction('rename')}>Rename</button>
+                            <button className="w-full text-left px-3 py-1.5 text-xs text-red-500 hover:bg-[var(--bg-surface-hover)]" onClick={() => handleAction('delete')}>
                                 Delete
                             </button>
                         </>

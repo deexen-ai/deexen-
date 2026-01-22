@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { X, FileCode } from 'lucide-react';
 import { useFileStore } from '@/stores/useFileStore';
+import { useThemeStore } from '@/stores/useThemeStore';
 import { cn } from '@/utils/cn';
 
 export default function CodeEditor() {
     const { openFiles, activeFileId, files, closeFile, selectFile, updateFileContent } = useFileStore();
+    const { theme } = useThemeStore();
     const [activeContent, setActiveContent] = useState('');
     const [activeLanguage, setActiveLanguage] = useState('typescript');
 
@@ -39,7 +41,7 @@ export default function CodeEditor() {
 
     if (!activeFileId || openFiles.length === 0) {
         return (
-            <div className="h-full bg-[#0a0a0a] flex flex-col items-center justify-center text-neutral-600">
+            <div className="h-full bg-[var(--bg-canvas)] flex flex-col items-center justify-center text-[var(--text-secondary)]">
                 <FileCode className="h-12 w-12 mb-3 opacity-30" />
                 <p className="text-sm">Select a file to start editing</p>
             </div>
@@ -47,9 +49,9 @@ export default function CodeEditor() {
     }
 
     return (
-        <div className="h-full bg-[#0a0a0a] flex flex-col w-full overflow-hidden">
+        <div className="h-full bg-[var(--bg-canvas)] flex flex-col w-full overflow-hidden">
             {/* Tabs */}
-            <div className="h-9 flex bg-[#0f0f0f] border-b border-neutral-800 overflow-x-auto">
+            <div className="h-9 flex bg-[var(--bg-surface)] border-b border-[var(--border-default)] overflow-x-auto">
                 {openFiles.map((fileId) => {
                     const file = findFileContent(fileId);
                     const isActive = fileId === activeFileId;
@@ -57,10 +59,10 @@ export default function CodeEditor() {
                         <div
                             key={fileId}
                             className={cn(
-                                "h-full px-3 flex items-center text-xs cursor-pointer group select-none border-r border-neutral-800",
+                                "h-full px-3 flex items-center text-xs cursor-pointer group select-none border-r border-[var(--border-default)]",
                                 isActive
-                                    ? "bg-[#0a0a0a] text-white border-t-2 border-t-orange-500"
-                                    : "bg-[#0f0f0f] text-neutral-500 hover:text-neutral-300"
+                                    ? "bg-[var(--bg-canvas)] text-[var(--text-primary)] border-t-2 border-t-orange-500"
+                                    : "bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                             )}
                             onClick={() => selectFile(fileId)}
                         >
@@ -68,7 +70,7 @@ export default function CodeEditor() {
                             <span className="truncate max-w-[120px]">{file?.name || fileId}</span>
                             <div
                                 className={cn(
-                                    "ml-2 p-0.5 rounded hover:bg-neutral-700",
+                                    "ml-2 p-0.5 rounded hover:bg-[var(--bg-surface-hover)]",
                                     !isActive && "opacity-0 group-hover:opacity-100"
                                 )}
                                 onClick={(e) => { e.stopPropagation(); closeFile(fileId); }}
@@ -86,7 +88,7 @@ export default function CodeEditor() {
                     height="100%"
                     language={activeLanguage}
                     value={activeContent}
-                    theme="deexen-dark"
+                    theme={theme === 'dark' ? 'deexen-dark' : 'deexen-light'}
                     onChange={(value) => {
                         if (activeFileId && value !== undefined) {
                             setActiveContent(value);
@@ -114,6 +116,18 @@ export default function CodeEditor() {
                                 'editor.background': '#0a0a0a',
                                 'editor.lineHighlightBackground': '#141414',
                                 'editorGutter.background': '#0a0a0a',
+                                'editorCursor.foreground': '#f97316',
+                                'editor.selectionBackground': '#f9731630',
+                            }
+                        });
+                        monaco.editor.defineTheme('deexen-light', {
+                            base: 'vs',
+                            inherit: true,
+                            rules: [],
+                            colors: {
+                                'editor.background': '#ffffff',
+                                'editor.lineHighlightBackground': '#f3f4f6',
+                                'editorGutter.background': '#ffffff',
                                 'editorCursor.foreground': '#f97316',
                                 'editor.selectionBackground': '#f9731630',
                             }
