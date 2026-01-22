@@ -5,6 +5,7 @@ import SignupPage from '@/pages/SignupPage';
 import DashboardPage from '@/pages/DashboardPage';
 import ProfilePage from '@/pages/ProfilePage';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useThemeStore } from '@/stores/useThemeStore';
 
 import WorkspacePage from '@/pages/WorkspacePage';
 
@@ -20,6 +21,14 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 
 function App() {
   const initializeAuth = useAuthStore((state) => state.initialize);
+
+  const { theme } = useThemeStore();
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
+  }, [theme]);
 
   useEffect(() => {
     initializeAuth();

@@ -16,7 +16,7 @@ const ActivityBar = ({ activeView, setActiveView }: { activeView: string, setAct
     ];
 
     return (
-        <div className="w-12 bg-[#0a0a0a] border-r border-neutral-800 flex flex-col items-center py-2 flex-shrink-0">
+        <div className="w-12 bg-[var(--bg-canvas)] border-r border-[var(--border-default)] flex flex-col items-center py-2 flex-shrink-0">
             {icons.map(item => (
                 <button
                     key={item.id}
@@ -25,8 +25,8 @@ const ActivityBar = ({ activeView, setActiveView }: { activeView: string, setAct
                     className={cn(
                         "w-10 h-10 flex items-center justify-center relative transition-colors",
                         activeView === item.id
-                            ? "text-white"
-                            : "text-neutral-600 hover:text-neutral-400"
+                            ? "text-[var(--text-primary)]"
+                            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                     )}
                 >
                     {activeView === item.id && (
@@ -40,7 +40,7 @@ const ActivityBar = ({ activeView, setActiveView }: { activeView: string, setAct
 
             <button
                 title="Settings"
-                className="w-10 h-10 flex items-center justify-center text-neutral-600 hover:text-neutral-400 transition-colors"
+                className="w-10 h-10 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             >
                 <Settings className="w-5 h-5" />
             </button>
@@ -95,19 +95,19 @@ export default function WorkspacePage() {
 
     return (
         <div className={cn(
-            "h-screen w-screen flex flex-col bg-[#0a0a0a] overflow-hidden text-white font-sans",
+            "h-screen w-screen flex flex-col bg-[var(--bg-canvas)] overflow-hidden text-[var(--text-primary)] font-sans",
             isDragging && "cursor-grabbing select-none"
         )}>
             {/* Title Bar */}
-            <div className="h-8 bg-[#0a0a0a] border-b border-neutral-800 flex items-center px-3 text-xs select-none">
+            <div className="h-8 bg-[var(--bg-canvas)] border-b border-[var(--border-default)] flex items-center px-3 text-xs select-none">
                 <div className="flex items-center space-x-2">
                     <img src="/deexenlogo.png" alt="Deexen" className="h-4" />
-                    <span className="text-neutral-400">Deexen</span>
+                    <span className="text-[var(--text-secondary)]">Deexen</span>
                 </div>
                 <div className="flex-1 flex items-center justify-center">
-                    <span className="text-white">deexen-frontend</span>
-                    <span className="text-neutral-600 mx-2">—</span>
-                    <span className="text-neutral-500">src/App.tsx</span>
+                    <span className="text-[var(--text-primary)]">deexen-frontend</span>
+                    <span className="text-[var(--text-secondary)] mx-2">—</span>
+                    <span className="text-[var(--text-secondary)]">src/App.tsx</span>
                 </div>
             </div>
 
@@ -119,10 +119,10 @@ export default function WorkspacePage() {
                 {/* Left Sidebar */}
                 <div
                     style={{ width: leftPanelWidth }}
-                    className="flex-shrink-0 flex flex-col bg-[#0f0f0f] border-r border-neutral-800 relative"
+                    className="flex-shrink-0 flex flex-col bg-[var(--bg-surface)] border-r border-[var(--border-default)] relative"
                 >
                     {/* Sidebar Header */}
-                    <div className="h-9 flex items-center px-4 text-xs font-medium text-neutral-400 uppercase tracking-wider border-b border-neutral-800">
+                    <div className="h-9 flex items-center px-4 text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider border-b border-[var(--border-default)]">
                         {activeSidebarView === 'explorer' && 'Explorer'}
                         {activeSidebarView === 'search' && 'Search'}
                         {activeSidebarView === 'git' && 'Source Control'}
@@ -135,19 +135,19 @@ export default function WorkspacePage() {
                         {activeSidebarView === 'search' && (
                             <div className="p-3">
                                 <input
-                                    className="w-full h-8 px-3 bg-[#141414] border border-neutral-800 rounded text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-orange-500"
+                                    className="w-full h-8 px-3 bg-[var(--bg-surface-hover)] border border-[var(--border-default)] rounded text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-orange-500"
                                     placeholder="Search..."
                                 />
                             </div>
                         )}
                         {activeSidebarView === 'git' && (
-                            <div className="p-4 text-sm text-neutral-500 flex flex-col items-center justify-center h-full">
+                            <div className="p-4 text-sm text-[var(--text-secondary)] flex flex-col items-center justify-center h-full">
                                 <GitBranch className="w-8 h-8 mb-2 opacity-30" />
                                 <span>No changes</span>
                             </div>
                         )}
                         {activeSidebarView === 'ai' && (
-                            <div className="p-4 text-sm text-neutral-500 flex flex-col items-center justify-center h-full">
+                            <div className="p-4 text-sm text-[var(--text-secondary)] flex flex-col items-center justify-center h-full">
                                 <Sparkles className="w-8 h-8 mb-2 opacity-30" />
                                 <span>AI panel on right →</span>
                             </div>
@@ -164,18 +164,18 @@ export default function WorkspacePage() {
                 {/* Center Area */}
                 <div className="flex-1 flex flex-col min-w-0">
                     {/* Editor */}
-                    <div className="flex-1 min-h-0 bg-[#0a0a0a]">
+                    <div className="flex-1 min-h-0 bg-[var(--bg-canvas)]">
                         <CodeEditor />
                     </div>
 
                     {/* Terminal Resize Handle */}
                     <div
-                        className="h-1 bg-[#0f0f0f] cursor-row-resize hover:bg-orange-500/50 transition-colors"
+                        className="h-1 bg-[var(--bg-surface)] cursor-row-resize hover:bg-orange-500/50 transition-colors"
                         onMouseDown={startResize('terminal')}
                     />
 
                     {/* Terminal */}
-                    <div style={{ height: terminalHeight }} className="flex-shrink-0 bg-[#0a0a0a] border-t border-neutral-800">
+                    <div style={{ height: terminalHeight }} className="flex-shrink-0 bg-[var(--bg-canvas)] border-t border-[var(--border-default)]">
                         <Terminal />
                     </div>
                 </div>
@@ -184,10 +184,10 @@ export default function WorkspacePage() {
                 {showRightPanel && (
                     <>
                         <div
-                            className="w-1 bg-[#0f0f0f] cursor-col-resize hover:bg-orange-500/50 transition-colors flex-shrink-0"
+                            className="w-1 bg-[var(--bg-surface)] cursor-col-resize hover:bg-orange-500/50 transition-colors flex-shrink-0"
                             onMouseDown={startResize('right')}
                         />
-                        <div style={{ width: rightPanelWidth }} className="flex-shrink-0 bg-[#0f0f0f] border-l border-neutral-800">
+                        <div style={{ width: rightPanelWidth }} className="flex-shrink-0 bg-[var(--bg-surface)] border-l border-[var(--border-default)]">
                             <AIPanel />
                         </div>
                     </>
@@ -195,7 +195,7 @@ export default function WorkspacePage() {
             </div>
 
             {/* Status Bar */}
-            <div className="h-[22px] bg-[#0f0f0f] border-t border-neutral-800 flex items-center px-3 text-[11px] text-neutral-500 justify-between select-none">
+            <div className="h-[22px] bg-[#007acc] border-t border-[var(--border-default)] flex items-center px-3 text-[11px] text-white justify-between select-none">
                 <div className="flex items-center space-x-3">
                     <span className="flex items-center">
                         <GitBranch className="w-3 h-3 mr-1" />
