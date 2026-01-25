@@ -132,7 +132,7 @@ const FileTreeItem = ({ node, level, onContextMenu, renamingId, onRenameSubmit }
 };
 
 export default function FileExplorer() {
-    const { files, createFile, deleteNode, renameNode, collapseAllFolders, copyNode, cutNode, pasteNode } = useFileStore();
+    const { files, createFile, deleteNode, renameNode, collapseAllFolders, copyNode, cutNode, pasteNode, projectName } = useFileStore();
     const [contextMenu, setContextMenu] = useState<ContextMenuPosition | null>(null);
     const [renamingId, setRenamingId] = useState<string | null>(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -205,7 +205,7 @@ export default function FileExplorer() {
             <div className="px-3 py-2 flex items-center justify-between text-xs text-[var(--text-secondary)] cursor-pointer hover:bg-[var(--bg-surface-hover)] group">
                 <div className="flex items-center overflow-hidden">
                     <ChevronDown className="h-3 w-3 mr-1 flex-shrink-0" />
-                    <span className="truncate font-medium">deexen-frontend</span>
+                    <span className="truncate font-medium">{projectName}</span>
                 </div>
 
                 <div className="flex items-center space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
