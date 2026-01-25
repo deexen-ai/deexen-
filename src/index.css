@@ -10,13 +10,15 @@
   --bg-surface: #f3f4f6;
   /* Sidebar/Panel background */
   --bg-surface-hover: #e5e7eb;
-  --border-default: #e5e7eb;
-  --border-muted: #f3f4f6;
+  --border-default: #9ca3af;
+  /* Gray-400 */
+  --border-muted: #d1d5db;
+  /* Gray-300 */
 
-  --text-primary: #1f2937;
-  /* Gray-900 */
-  --text-secondary: #6b7280;
-  /* Gray-500 */
+  --text-primary: #000000;
+  /* Black */
+  --text-secondary: #1f2937;
+  /* Gray-800 */
   --text-link: #3b82f6;
 
   /* Activity Bar */

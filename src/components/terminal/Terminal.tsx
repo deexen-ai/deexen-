@@ -30,7 +30,7 @@ export default function Terminal() {
 
         if (lowerCmd === 'help') {
             response = (
-                <div className="flex flex-col text-neutral-500 pl-2">
+                <div className="flex flex-col text-[var(--text-secondary)] pl-2">
                     <span>ls      - List files</span>
                     <span>clear   - Clear terminal</span>
                     <span>npm run - Execute scripts</span>

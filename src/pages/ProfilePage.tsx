@@ -49,7 +49,7 @@ export default function ProfilePage() {
                         <h1 className="text-xl font-bold text-[var(--text-primary)] mb-1">{user.name}</h1>
                         <p className="text-[var(--text-secondary)] text-sm mb-4">Example User Bio</p> {/* Placeholder for bio */}
 
-                        <div className="flex items-center space-x-2 text-xs text-neutral-400 mb-6">
+                        <div className="flex items-center space-x-2 text-xs text-[var(--text-secondary)] mb-6">
                             <MapPin className="w-3 h-3" />
                             <span>San Francisco, CA</span>
                         </div>
