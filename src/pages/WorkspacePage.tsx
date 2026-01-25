@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileCode, Search, GitBranch, Settings, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 import FileExplorer from '@/components/file-explorer/FileExplorer';
 import CodeEditor from '@/components/editor/CodeEditor';
@@ -49,6 +50,7 @@ const ActivityBar = ({ activeView, setActiveView }: { activeView: string, setAct
 };
 
 export default function WorkspacePage() {
+    const navigate = useNavigate();
     const [activeSidebarView, setActiveSidebarView] = useState('explorer');
     const [leftPanelWidth, setLeftPanelWidth] = useState(240);
     const [rightPanelWidth, setRightPanelWidth] = useState(320);
@@ -100,7 +102,10 @@ export default function WorkspacePage() {
         )}>
             {/* Title Bar */}
             <div className="h-8 bg-[var(--bg-canvas)] border-b border-[var(--border-default)] flex items-center px-3 text-xs select-none">
-                <div className="flex items-center space-x-2">
+                <div
+                    className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => navigate('/dashboard')}
+                >
                     <img src="/deexenlogo.png" alt="Deexen" className="h-4" />
                     <span className="text-[var(--text-secondary)]">Deexen</span>
                 </div>

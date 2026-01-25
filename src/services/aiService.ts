@@ -4,12 +4,7 @@
 import { apiClient } from './apiClient';
 import type { AIMode } from '@/config/aiModes';
 
-interface AnalyzeRequest {
-    code: string;
-    mode: AIMode;
-    context?: string;
-    language?: string;
-}
+
 
 interface AnalyzeResponse {
     response: string;

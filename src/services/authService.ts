@@ -15,10 +15,7 @@ export interface User {
     onboardingCompleted?: boolean;
 }
 
-interface LoginRequest {
-    email: string;
-    password: string;
-}
+
 
 interface LoginResponse {
     user: User;

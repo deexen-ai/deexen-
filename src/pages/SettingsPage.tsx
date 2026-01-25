@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useThemeStore } from '@/stores/useThemeStore';
-import { User, Lock, Settings as SettingsIcon, Palette, Shield, X, Save } from 'lucide-react';
+import { User, Lock, Settings as SettingsIcon, Palette, Shield, X } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import Header from '@/components/layout/Header';
 import { Button } from '@/components/ui/Button';
