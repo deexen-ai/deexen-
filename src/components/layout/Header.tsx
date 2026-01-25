@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, LogOut, User, ChevronDown, Sun, Moon } from 'lucide-react';
+import { Settings, LogOut, User, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { useThemeStore } from '@/stores/useThemeStore';
+
 import { cn } from '@/utils/cn';
 
 export default function Header() {
     const navigate = useNavigate();
     const { user, logout } = useAuthStore();
-    const { theme, toggleTheme } = useThemeStore();
+
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -49,21 +49,8 @@ export default function Header() {
             </div>
 
             <div className="flex items-center space-x-2">
-                <button
-                    onClick={toggleTheme}
-                    className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] rounded transition-colors"
-                    title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
-                >
-                    {theme === 'dark' ? (
-                        <Sun className="w-4 h-4" />
-                    ) : (
-                        <Moon className="w-4 h-4" />
-                    )}
-                </button>
-                <button className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] rounded transition-colors" title="Settings">
-                    <Settings className="w-4 h-4" />
-                </button>
-                <div className="w-px h-4 bg-[var(--border-default)]" />
+
+
 
                 {/* User Dropdown */}
                 <div className="relative" ref={dropdownRef}>
@@ -97,7 +84,7 @@ export default function Header() {
                             </button>
 
                             <button
-                                onClick={() => { setIsDropdownOpen(false); }}
+                                onClick={() => { setIsDropdownOpen(false); navigate('/settings'); }}
                                 className="w-full text-left px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] flex items-center space-x-2"
                             >
                                 <Settings className="w-3.5 h-3.5" />
