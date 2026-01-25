@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FileCode, Search, GitBranch, Settings, Sparkles } from 'lucide-react';
+import { FileCode, Search, GitBranch, Settings, Sparkles, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/utils/cn';
+import { useFileStore, getFileBreadcrumbs } from '@/stores/useFileStore';
 import FileExplorer from '@/components/file-explorer/FileExplorer';
 import CodeEditor from '@/components/editor/CodeEditor';
 import Terminal from '@/components/terminal/Terminal';
@@ -58,11 +59,16 @@ export default function WorkspacePage() {
     const [isDragging, setIsDragging] = useState<'left' | 'right' | 'terminal' | null>(null);
     const [showRightPanel, setShowRightPanel] = useState(true);
 
+    const { files, activeFileId, projectName } = useFileStore();
+    const activeFilePath = activeFileId ? getFileBreadcrumbs(files, activeFileId) : '';
+
     useEffect(() => {
         if (activeSidebarView === 'ai') {
             setShowRightPanel(true);
         }
     }, [activeSidebarView]);
+
+    // ... existing resize logic ...
 
     const startResize = (direction: 'left' | 'right' | 'terminal') => (e: React.MouseEvent) => {
         e.preventDefault();
@@ -103,16 +109,20 @@ export default function WorkspacePage() {
             {/* Title Bar */}
             <div className="h-8 bg-[var(--bg-canvas)] border-b border-[var(--border-default)] flex items-center px-3 text-xs select-none">
                 <div
-                    className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+                    className="flex items-center space-x-2 cursor-pointer hover:text-[var(--text-primary)] transition-colors text-[var(--text-secondary)]"
                     onClick={() => navigate('/dashboard')}
                 >
-                    <img src="/deexenlogo.png" alt="Deexen" className="h-4" />
-                    <span className="text-[var(--text-secondary)]">Deexen</span>
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                    <span>Back to Dashboard</span>
                 </div>
                 <div className="flex-1 flex items-center justify-center">
-                    <span className="text-[var(--text-primary)]">deexen-frontend</span>
-                    <span className="text-[var(--text-secondary)] mx-2">—</span>
-                    <span className="text-[var(--text-secondary)]">src/App.tsx</span>
+                    <span className="text-[var(--text-primary)]">{projectName}</span>
+                    {activeFilePath && (
+                        <>
+                            <span className="text-[var(--text-secondary)] mx-2">—</span>
+                            <span className="text-[var(--text-secondary)]">{activeFilePath}</span>
+                        </>
+                    )}
                 </div>
             </div>
 

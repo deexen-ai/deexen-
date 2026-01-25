@@ -48,7 +48,7 @@ export default function SettingsPage() {
 
             {/* Centered Page Content */}
             <div className="flex-1 flex items-center justify-center p-6 md:p-12 overflow-hidden">
-                <div className="w-full h-full max-w-6xl max-h-[800px] bg-[var(--bg-surface)] rounded-xl border border-[var(--border-default)] shadow-2xl flex overflow-hidden">
+                <div className="w-full max-w-5xl h-[550px] bg-[var(--bg-surface)] rounded-xl border border-[var(--border-default)] shadow-2xl flex overflow-hidden">
 
                     {/* Sidebar */}
                     <div className="w-64 border-r border-[var(--border-default)] bg-[var(--bg-surface)] flex flex-col">

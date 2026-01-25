@@ -8,6 +8,7 @@ import {
 import { cn } from '@/utils/cn';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useAIStore } from '@/stores/useAIStore';
+import { useFileStore } from '@/stores/useFileStore';
 
 import { projects } from '@/data/projects';
 
@@ -18,9 +19,11 @@ export default function DashboardPage() {
     const navigate = useNavigate();
     const { user } = useAuthStore();
     const { setChatOpen, setTriggerMessage } = useAIStore();
+    const { setProjectName } = useFileStore();
     const [searchQuery, setSearchQuery] = useState('');
 
-    const handleOpenWorkspace = () => {
+    const handleOpenWorkspace = (name: string) => {
+        setProjectName(name);
         navigate('/workspace');
     };
 
@@ -82,7 +85,7 @@ export default function DashboardPage() {
                     {filteredProjects.map((project, i) => (
                         <div
                             key={project.id}
-                            onClick={() => handleOpenWorkspace()}
+                            onClick={() => handleOpenWorkspace(project.name)}
                             className={cn(
                                 "h-14 flex items-center px-4 cursor-pointer transition-colors group",
                                 "hover:bg-[var(--bg-surface-hover)]",
@@ -145,7 +148,7 @@ export default function DashboardPage() {
 
                 {/* Footer info */}
                 <div className="mt-4 flex items-center justify-between text-xs text-[var(--text-secondary)]">
-                    <span>{projects.length} projects</span>
+                    <span>{filteredProjects.length} {filteredProjects.length === 1 ? 'project' : 'projects'}</span>
                 </div>
             </div>
             <AiAssistant />

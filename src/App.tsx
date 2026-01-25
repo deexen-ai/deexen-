@@ -20,9 +20,9 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   }
 
   // Redirect to onboarding if not completed (and allow for optional chaining in case user struct is partial)
-  if (!user?.onboardingCompleted) {
-    return <Navigate to="/onboarding" replace />;
-  }
+  // if (!user?.onboardingCompleted) {
+  //   return <Navigate to="/onboarding" replace />;
+  // }
 
   return children;
 }
