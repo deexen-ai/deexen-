@@ -33,16 +33,20 @@
   --bg-surface-hover: #1f1f1f;
   --border-default: #262626;
   --border-muted: #1f1f1f;
-  
+
   --text-primary: #ffffff;
   --text-secondary: #a3a3a3;
-  
+
   --bg-activity-bar: #000000;
   --code-bg: #111111;
 }
 
 body {
-  @apply bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans antialiased;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Custom Scrollbar - Light */
@@ -52,13 +56,15 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-transparent;
+  background-color: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 rounded-full border-2 border-white;
+  background-color: #d1d5db;
+  border-radius: 9999px;
+  border: 2px solid white;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400;
+  background-color: #9ca3af;
 }

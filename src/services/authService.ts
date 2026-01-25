@@ -11,6 +11,8 @@ export interface User {
     joinDate?: string;
     lastActive?: string;
     projectCount?: number;
+    role?: string;
+    onboardingCompleted?: boolean;
 }
 
 interface LoginRequest {
@@ -98,6 +100,7 @@ class AuthService {
             joinDate: 'Jan 2026',
             lastActive: 'Just now',
             projectCount: 12,
+            onboardingCompleted: false,
         };
 
         const token = 'mock-jwt-token-' + Math.random().toString(36).substring(2);
@@ -120,6 +123,7 @@ class AuthService {
             joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
             lastActive: 'Just now',
             projectCount: 0,
+            onboardingCompleted: false,
         };
 
         const token = 'mock-jwt-token-' + Math.random().toString(36).substring(2);
