@@ -12,6 +12,7 @@ interface EditProfileModalProps {
 export default function EditProfileModal({ isOpen, onClose }: EditProfileModalProps) {
     const { user, updateUser } = useAuthStore();
     const [name, setName] = useState(user?.name || '');
+    // const [email, setEmail] = useState(user?.email || ''); // Assuming email is editable or just for display
     const [isLoading, setIsLoading] = useState(false);
 
     // Mock additional fields if they were in the user object

@@ -9,10 +9,11 @@ import { useFileStore } from '@/stores/useFileStore';
 
 // AI Models
 const AI_MODELS = [
+    { id: 'gemini', name: 'Gemini 2.5 Flash', suffix: '' },
+    { id: 'magicoder', name: 'Magicoder 7B', suffix: '(Local)' },
     { id: 'opus', name: 'Claude Opus 4.5', suffix: '(Thinking)' },
     { id: 'sonnet', name: 'Claude Sonnet 4', suffix: '' },
     { id: 'gpt4', name: 'GPT-4o', suffix: '' },
-    { id: 'gemini', name: 'Gemini 2.5 Pro', suffix: '' },
 ];
 
 // Format response with code blocks
@@ -22,13 +23,19 @@ function formatResponse(text: string) {
     return parts.map((part, idx) => {
         if (part.startsWith('```')) {
             const lines = part.replace(/```/g, '').trim().split('\n');
-            // Remove language identifier if present (e.g., "javascript", "python")
-            if (lines[0] && lines[0].match(/^[a-z]+$/i)) lines.shift();
+            const lang = lines[0].match(/^[a-z]+$/i) ? lines.shift() : '';
             const code = lines.join('\n');
             return (
-                <pre key={idx} className="bg-[#0a0a0a] border border-[var(--border-default)] rounded p-3 my-2 overflow-x-auto">
-                    <code className="text-xs text-neutral-300 font-mono">{code}</code>
-                </pre>
+                <div key={idx} className="relative group my-4">
+                    {lang && (
+                        <div className="absolute right-3 top-3 text-[10px] text-[var(--text-secondary)] uppercase font-bold tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                            {lang}
+                        </div>
+                    )}
+                    <pre className="bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded p-3 overflow-x-auto selection:bg-orange-500/30">
+                        <code className="text-xs text-neutral-300 font-mono leading-relaxed">{code}</code>
+                    </pre>
+                </div>
             );
         } else {
             // Parse bold text
@@ -47,25 +54,56 @@ function formatResponse(text: string) {
     });
 }
 
+// Helper to flatten files for mention list
+const getAllFiles = (nodes: any[]): any[] => {
+    let allFiles: any[] = [];
+    for (const node of nodes) {
+        if (node.type === 'file') {
+            allFiles.push(node);
+        }
+        if (node.children) {
+            allFiles = [...allFiles, ...getAllFiles(node.children)];
+        }
+    }
+    return allFiles;
+};
+
 export default function AIPanel() {
-    const { selectedMode, setMode, isLoading, setLoading, error, setError, response, setResponse, addToHistory } = useAIStore();
+    const { selectedMode, setMode, selectedModel, setModel, isLoading, setLoading, error, setError, response, setResponse, addToHistory } = useAIStore();
     const { activeFileId, files } = useFileStore();
 
     const [input, setInput] = useState('');
-    const [activeModel, setActiveModel] = useState('opus');
     const [showModeDropdown, setShowModeDropdown] = useState(false);
     const [showModelDropdown, setShowModelDropdown] = useState(false);
     const [showAddMenu, setShowAddMenu] = useState(false);
     const [copied, setCopied] = useState(false);
+
+    // Mention state
+    const [showMentions, setShowMentions] = useState(false);
+    const [mentionQuery, setMentionQuery] = useState('');
+    const [mentionIndex, setMentionIndex] = useState(0);
+
     const bottomRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
     const config = MODE_CONFIG[selectedMode];
-    const currentModel = AI_MODELS.find(m => m.id === activeModel) || AI_MODELS[0];
+    const currentModel = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
+    const allFiles = getAllFiles(files);
+
+    const filteredFiles = allFiles.filter(f =>
+        f.name.toLowerCase().includes(mentionQuery.toLowerCase())
+    );
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [response]);
+
+    useEffect(() => {
+        if (!showMentions) {
+            setMentionIndex(0);
+            setMentionQuery('');
+        }
+    }, [showMentions]);
 
     // Close dropdowns on click outside
     useEffect(() => {
@@ -73,14 +111,15 @@ export default function AIPanel() {
             setShowModeDropdown(false);
             setShowModelDropdown(false);
             setShowAddMenu(false);
+            setShowMentions(false);
         };
         document.addEventListener('click', handler);
         return () => document.removeEventListener('click', handler);
     }, []);
 
     // Get current file content
-    const getCurrentCode = () => {
-        if (!activeFileId) return '';
+    const getCurrentCode = (): { content: string; name: string } => {
+        if (!activeFileId) return { content: '', name: '' };
         const findFile = (nodes: any[]): any => {
             for (const node of nodes) {
                 if (node.id === activeFileId) return node;
@@ -92,11 +131,55 @@ export default function AIPanel() {
             return null;
         };
         const file = findFile(files);
-        return file?.content || '';
+        return { content: file?.content || '', name: file?.name || '' };
+    };
+
+    // Helper to detect language
+    const getLanguage = (filename: string): string => {
+        if (!filename) return 'javascript';
+        const ext = filename.split('.').pop()?.toLowerCase();
+        const map: Record<string, string> = {
+            'ts': 'typescript',
+            'tsx': 'typescript',
+            'js': 'javascript',
+            'jsx': 'javascript',
+            'py': 'python',
+            'html': 'html',
+            'css': 'css',
+            'json': 'json',
+            'md': 'markdown'
+        };
+        return map[ext || ''] || 'text';
     };
 
     const handleAnalyze = async () => {
-        const code = input.trim() || getCurrentCode();
+        let code = input.trim();
+        let language = 'text';
+
+        // 1. Check for file mentions in input (e.g. @filename)
+        const mentionMatch = input.match(/@([a-zA-Z0-9_\-\.]+)/);
+        if (mentionMatch) {
+            const filename = mentionMatch[1];
+            const file = allFiles.find(f => f.name === filename);
+
+            if (file) {
+                language = getLanguage(file.name);
+                // Append file content to the user's prompt
+                code = `${input}\n\n// Content of ${file.name}:\n${file.content}`;
+            } else {
+                // Mentioned file not found, treat as text
+            }
+        }
+        // 2. If no input (or only whitespace), use active file
+        else if (!code) {
+            const currentFile = getCurrentCode();
+            if (currentFile.content) {
+                code = currentFile.content;
+                language = getLanguage(currentFile.name);
+            }
+        }
+        // 3. Input exists but no mention -> Treat as raw text/code input
+        // (Default behavior maintained)
 
         if (!code) {
             setError('Please write some code first or type a question');
@@ -107,8 +190,8 @@ export default function AIPanel() {
         setError(null);
 
         try {
-            // Use mock for demo
-            const result = await aiService.mockAnalyze(selectedMode, code);
+            // Use real analyze method with selected model
+            const result = await aiService.analyze(selectedMode, selectedModel, code, undefined, language);
 
             const responseData = {
                 mode: selectedMode,
@@ -125,7 +208,62 @@ export default function AIPanel() {
         }
     };
 
+    const insertMention = (filename: string) => {
+        const cursorPos = input.lastIndexOf('@');
+        if (cursorPos === -1) return;
+
+        const prefix = input.substring(0, cursorPos);
+        const newInput = prefix + '@' + filename + ' ';
+        setInput(newInput);
+        setShowMentions(false);
+        inputRef.current?.focus();
+    };
+
+    const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const value = e.target.value;
+        setInput(value);
+
+        const lastAtIndex = value.lastIndexOf('@');
+        if (lastAtIndex !== -1) {
+            const query = value.slice(lastAtIndex + 1);
+            // Only show if no spaces after @ (simple logic)
+            if (!query.includes(' ')) {
+                setMentionQuery(query);
+                if (!showMentions) {
+                    setShowMentions(true);
+                }
+                return;
+            }
+        }
+        setShowMentions(false);
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (showMentions) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setMentionIndex(prev => (prev + 1) % filteredFiles.length);
+                return;
+            }
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setMentionIndex(prev => (prev - 1 + filteredFiles.length) % filteredFiles.length);
+                return;
+            }
+            if (e.key === 'Enter' || e.key === 'Tab') {
+                e.preventDefault();
+                if (filteredFiles[mentionIndex]) {
+                    insertMention(filteredFiles[mentionIndex].name);
+                }
+                return;
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                setShowMentions(false);
+                return;
+            }
+        }
+
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleAnalyze();
@@ -141,7 +279,7 @@ export default function AIPanel() {
     };
 
     return (
-        <div className="h-full flex flex-col bg-[var(--bg-surface)]">
+        <div className="h-full flex flex-col bg-[var(--bg-canvas)]">
             {/* Header */}
             <div className="h-10 flex items-center justify-between px-4 border-b border-[var(--border-default)] flex-shrink-0">
                 <div className="flex items-center space-x-2">
@@ -162,6 +300,8 @@ export default function AIPanel() {
                     </div>
                 </div>
             </div>
+
+
 
             {/* Response Area */}
             <div className="flex-1 overflow-y-auto p-4">
@@ -209,7 +349,7 @@ export default function AIPanel() {
                             <div className="flex items-center space-x-2">
                                 <button
                                     onClick={handleCopy}
-                                    className="flex items-center space-x-1 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+                                    className="flex items-center space-x-1 text-xs text-[var(--text-secondary)] hover:text-neutral-300 transition-colors"
                                 >
                                     {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
                                     <span>{copied ? 'Copied!' : 'Copy'}</span>
@@ -218,7 +358,7 @@ export default function AIPanel() {
                         </div>
 
                         {/* Response Content */}
-                        <div className="prose prose-invert prose-sm max-w-none text-[var(--text-primary)]">
+                        <div className="prose prose-invert prose-sm max-w-none">
                             {formatResponse(response.response)}
                         </div>
 
@@ -244,21 +384,45 @@ export default function AIPanel() {
             </div>
 
             {/* Input Area */}
-            <div className="border-t border-[var(--border-default)] flex-shrink-0">
+            <div className="border-t border-[var(--border-default)] flex-shrink-0 relative">
+                {/* Mention Dropdown */}
+                {showMentions && filteredFiles.length > 0 && (
+                    <div
+                        className="absolute bottom-full left-3 mb-2 w-64 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg shadow-xl overflow-hidden z-50 max-h-48 overflow-y-auto"
+                    >
+                        <div className="px-3 py-1.5 text-[10px] text-[var(--text-secondary)] uppercase tracking-wider bg-[var(--bg-surface)] border-b border-[var(--border-default)]">
+                            Mention File
+                        </div>
+                        {filteredFiles.map((file, idx) => (
+                            <button
+                                key={file.id}
+                                onClick={() => insertMention(file.name)}
+                                className={cn(
+                                    "w-full text-left px-3 py-2 text-xs flex items-center space-x-2 hover:bg-[var(--bg-surface-hover)] transition-colors",
+                                    idx === mentionIndex ? "bg-neutral-800 text-[var(--text-primary)]" : "text-neutral-300"
+                                )}
+                            >
+                                <FileText className="w-3.5 h-3.5 text-blue-400" />
+                                <span>{file.name}</span>
+                            </button>
+                        ))}
+                    </div>
+                )}
+
                 {/* Text Input */}
                 <div className="p-3">
                     <div className="relative">
                         <textarea
                             ref={inputRef}
                             value={input}
-                            onChange={(e) => setInput(e.target.value)}
+                            onChange={handleInput}
                             onKeyDown={handleKeyDown}
                             placeholder="Ask anything (Ctrl+L), @ to mention, / for workflows"
                             rows={2}
-                            className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-lg px-3 py-2 pr-20 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-neutral-700 resize-none"
+                            className="w-full bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg px-3 py-2 pr-20 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-[var(--border-default)] resize-none"
                         />
                         <div className="absolute right-2 bottom-2 flex items-center space-x-1">
-                            <button className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+                            <button className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-secondary)] transition-colors">
                                 <Mic className="w-4 h-4" />
                             </button>
                             <button
@@ -267,8 +431,8 @@ export default function AIPanel() {
                                 className={cn(
                                     "p-1.5 rounded transition-colors",
                                     !isLoading
-                                        ? "bg-orange-500 text-white hover:bg-orange-600"
-                                        : "bg-[var(--bg-surface-hover)] text-[var(--text-secondary)]"
+                                        ? "bg-orange-500 text-[var(--text-primary)] hover:bg-orange-600"
+                                        : "bg-neutral-700 text-[var(--text-secondary)]"
                                 )}
                             >
                                 <Send className="w-4 h-4" />
@@ -284,7 +448,7 @@ export default function AIPanel() {
                         disabled={isLoading}
                         className={cn(
                             "w-full py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2",
-                            isLoading ? "bg-[var(--bg-surface-hover)] text-[var(--text-secondary)]" : "text-white hover:opacity-90"
+                            isLoading ? "bg-neutral-800 text-[var(--text-secondary)]" : "text-[var(--text-primary)] hover:opacity-90"
                         )}
                         style={{ backgroundColor: isLoading ? undefined : config.color }}
                     >
@@ -305,27 +469,33 @@ export default function AIPanel() {
                         {/* Add Button */}
                         <div className="relative">
                             <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowModeDropdown(false);
-                                    setShowModelDropdown(false);
-                                    setShowAddMenu(!showAddMenu);
-                                }}
-                                className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] rounded transition-colors"
+                                onClick={(e) => { e.stopPropagation(); setShowAddMenu(!showAddMenu); }}
+                                className="p-1.5 text-[var(--text-secondary)] hover:text-neutral-300 hover:bg-[var(--bg-surface-hover)] rounded transition-colors"
                             >
                                 <Plus className="w-4 h-4" />
                             </button>
                             {showAddMenu && (
                                 <div className="absolute bottom-full left-0 mb-1 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg shadow-xl py-1 min-w-[160px] z-50">
-                                    <button className="w-full text-left px-3 py-2 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] flex items-center space-x-2">
+                                    <button className="w-full text-left px-3 py-2 text-xs text-neutral-300 hover:bg-[var(--bg-surface-hover)] flex items-center space-x-2">
                                         <FileText className="w-3.5 h-3.5" />
                                         <span>Add File</span>
                                     </button>
-                                    <button className="w-full text-left px-3 py-2 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] flex items-center space-x-2">
+                                    <button className="w-full text-left px-3 py-2 text-xs text-neutral-300 hover:bg-[var(--bg-surface-hover)] flex items-center space-x-2">
                                         <Image className="w-3.5 h-3.5" />
                                         <span>Add Image</span>
                                     </button>
-                                    <button className="w-full text-left px-3 py-2 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] flex items-center space-x-2">
+                                    <button
+                                        onClick={() => {
+                                            setInput(input + '@');
+                                            setShowAddMenu(false);
+                                            inputRef.current?.focus();
+                                            // The onChange won't trigger automatically here, so we manually trigger logic or rely on them typing next
+                                            // Ideally we manually trigger the mention state:
+                                            setMentionQuery('');
+                                            setShowMentions(true);
+                                        }}
+                                        className="w-full text-left px-3 py-2 text-xs text-neutral-300 hover:bg-[var(--bg-surface-hover)] flex items-center space-x-2"
+                                    >
                                         <AtSign className="w-3.5 h-3.5" />
                                         <span>Mention File</span>
                                     </button>
@@ -336,13 +506,8 @@ export default function AIPanel() {
                         {/* Mode Toggle */}
                         <div className="relative">
                             <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowAddMenu(false);
-                                    setShowModelDropdown(false);
-                                    setShowModeDropdown(!showModeDropdown);
-                                }}
-                                className="flex items-center space-x-1.5 px-2 py-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] rounded transition-colors"
+                                onClick={(e) => { e.stopPropagation(); setShowModeDropdown(!showModeDropdown); }}
+                                className="flex items-center space-x-1.5 px-2 py-1 text-xs text-[var(--text-secondary)] hover:text-neutral-200 hover:bg-[var(--bg-surface-hover)] rounded transition-colors"
                             >
                                 <ChevronUp className="w-3 h-3" />
                                 <config.Icon className="w-3 h-3" style={{ color: config.color }} />
@@ -357,7 +522,7 @@ export default function AIPanel() {
                                             onClick={() => { setMode(mode.id as AIMode); setShowModeDropdown(false); }}
                                             className={cn(
                                                 "w-full text-left px-3 py-2 hover:bg-[var(--bg-surface-hover)] flex items-center space-x-3",
-                                                selectedMode === mode.id && "bg-[var(--bg-surface-hover)]"
+                                                selectedMode === mode.id && "bg-neutral-800"
                                             )}
                                         >
                                             <mode.Icon className="w-3.5 h-3.5" style={{ color: mode.color }} />
@@ -374,13 +539,8 @@ export default function AIPanel() {
                         {/* Model Selector */}
                         <div className="relative">
                             <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowAddMenu(false);
-                                    setShowModeDropdown(false);
-                                    setShowModelDropdown(!showModelDropdown);
-                                }}
-                                className="flex items-center space-x-1 px-2 py-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] rounded transition-colors"
+                                onClick={(e) => { e.stopPropagation(); setShowModelDropdown(!showModelDropdown); }}
+                                className="flex items-center space-x-1 px-2 py-1 text-xs text-[var(--text-secondary)] hover:text-neutral-200 hover:bg-[var(--bg-surface-hover)] rounded transition-colors"
                             >
                                 <ChevronUp className="w-3 h-3" />
                                 <span>{currentModel.name}</span>
@@ -391,13 +551,13 @@ export default function AIPanel() {
                                     {AI_MODELS.map((model) => (
                                         <button
                                             key={model.id}
-                                            onClick={() => { setActiveModel(model.id); setShowModelDropdown(false); }}
+                                            onClick={() => { setModel(model.id); setShowModelDropdown(false); }}
                                             className={cn(
                                                 "w-full text-left px-3 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)]",
-                                                activeModel === model.id && "bg-[var(--bg-surface-hover)] text-[var(--text-primary)]"
+                                                selectedModel === model.id && "bg-[var(--bg-surface-hover)] text-[var(--text-primary)]"
                                             )}
                                         >
-                                            {model.name} <span className="text-neutral-500">{model.suffix}</span>
+                                            {model.name} <span className="text-[var(--text-secondary)]">{model.suffix}</span>
                                         </button>
                                     ))}
                                 </div>

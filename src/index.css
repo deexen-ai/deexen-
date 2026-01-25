@@ -36,7 +36,6 @@
 
   --text-primary: #ffffff;
   --text-secondary: #a3a3a3;
-
   --bg-activity-bar: #000000;
   --code-bg: #111111;
 }
@@ -49,7 +48,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom Scrollbar - Light */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -65,6 +64,14 @@ body {
   border: 2px solid white;
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-neutral-700 border-neutral-900;
+}
+
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #9ca3af;
+  @apply bg-gray-400;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  @apply bg-neutral-600;
 }

@@ -45,6 +45,7 @@ function OnboardingRoute({ children }: { children: ReactNode }) {
 
 function App() {
   const initializeAuth = useAuthStore((state) => state.initialize);
+  const theme = useThemeStore((state) => state.theme);
 
   const { theme } = useThemeStore();
 
@@ -57,6 +58,14 @@ function App() {
   useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   return (
     <Router>

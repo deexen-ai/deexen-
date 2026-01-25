@@ -4,11 +4,10 @@
 import { apiClient } from './apiClient';
 import type { AIMode } from '@/config/aiModes';
 
-
-
 interface AnalyzeResponse {
     response: string;
     mode: AIMode;
+    model: string;
     tokens?: number;
     processingTime?: number;
 }
@@ -18,47 +17,171 @@ class AIService {
     // REAL API ENDPOINTS
     // ==========================================
 
-    async analyze(mode: AIMode, code: string, context?: string): Promise<string> {
+    async analyze(mode: AIMode, model: string, code: string, context?: string, language?: string): Promise<string> {
         if (apiClient.isMockMode()) {
-            return this.mockAnalyze(mode, code);
+            return this.mockAnalyze(mode, model, code);
         }
 
         const response = await apiClient.post<AnalyzeResponse>('/ai/analyze', {
             code,
             mode,
+            model,
             context: context || 'Deexen IDE',
+            language: language || 'javascript'
         });
 
         return response.response;
     }
 
-    // Mode-specific endpoints (alternative to single analyze endpoint)
-    async debug(code: string): Promise<string> {
-        return this.analyze('debug', code);
+    // Mode-specific endpoints
+    async debug(code: string, model: string = 'gemini'): Promise<string> {
+        return this.analyze('debug', model, code);
     }
 
-    async enhance(code: string): Promise<string> {
-        return this.analyze('enhance', code);
+    async enhance(code: string, model: string = 'gemini'): Promise<string> {
+        return this.analyze('enhance', model, code);
     }
 
-    async expand(code: string): Promise<string> {
-        return this.analyze('expand', code);
+    async expand(code: string, model: string = 'gemini'): Promise<string> {
+        return this.analyze('expand', model, code);
     }
 
-    async teach(code: string): Promise<string> {
-        return this.analyze('teaching', code);
+    async teach(code: string, model: string = 'gemini'): Promise<string> {
+        return this.analyze('teaching', model, code);
     }
 
-    async livefix(code: string): Promise<string> {
-        return this.analyze('livefix', code);
+    async livefix(code: string, model: string = 'gemini'): Promise<string> {
+        return this.analyze('livefix', model, code);
     }
 
     // ==========================================
     // MOCK IMPLEMENTATIONS
     // ==========================================
 
-    async mockAnalyze(mode: AIMode, _code: string): Promise<string> {
+    async mockAnalyze(mode: AIMode, model: string, code: string): Promise<string> {
         await this.simulateDelay(1500);
+        console.log(`Mock analyzing with ${model} in ${mode} mode`);
+        console.log(`Code size: ${code.length}`);
+
+        // Tailored responses for Magicoder
+        if (model.includes('magicoder') || model.includes('wizard') || model.includes('33b') || model.includes('7b')) {
+            const magicoderResponses: Record<AIMode, string> = {
+                debug: `**[Magicoder Analysis] Bug Report**
+
+I've detected 2 critical issues in your code segment:
+
+**1. Potential Null Reference (Line 5)**
+\`\`\`typescript
+// Current:
+console.log(data.name);
+
+// Fix:
+if (data?.name) {
+    console.log(data.name);
+}
+\`\`\`
+*Reasoning: \`data\` object might be undefined during initial render.*
+
+**2. Unhandled Promise Rejection (Line 12)**
+Missing \`catch\` block in async operation.
+
+**Suggested Fix:**
+\`\`\`typescript
+try {
+    await processData();
+} catch (error) {
+    console.error('Processing failed:', error);
+}
+\`\`\``,
+
+                enhance: `**[Magicoder] Code Enhancement Plan**
+
+Your code logic is sound, but we can improve performance and readability:
+
+**1. Optimization: Use Async/Await**
+Refactor the promise chain to clean async/await syntax.
+
+**2. Refactoring: Extract Helper Function**
+The validation logic on lines 15-25 is repetitive. Let's move it to a util:
+\`\`\`typescript
+const validateInput = (input: string): boolean => {
+    return input.length > 3 && /^[a-z]+$/i.test(input);
+};
+\`\`\`
+
+**3. Type Safety**
+Replace \`any\` with a specific interface \`UserData\` to prevent runtime type errors.`,
+
+                expand: `**[Magicoder] Feature Expansion Blueprint**
+
+Based on your current code, here is a scalable expansion plan:
+
+**1. Add Caching Layer**
+Implement a simple LRU cache to reduce API calls:
+\`\`\`typescript
+const cache = new Map<string, CachedResponse>();
+// Check cache before making network request
+\`\`\`
+
+**2. Implement Retry Logic**
+Network requests should have resilience:
+\`\`\`typescript
+async function fetchWithRetry(url: string, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await fetch(url);
+        } catch (err) {
+            if (i === retries - 1) throw err;
+            await sleep(1000 * Math.pow(2, i));
+        }
+    }
+}
+\`\`\`
+
+**3. Add User Analytics Module**
+Track usage patterns to optimize feature rollout.`,
+
+                teaching: `**[Magicoder] Interactive Learning Session**
+
+Let's break down this code together. I won't give you the answer yet!
+
+**Concept: Asynchronous Data Handling**
+
+**Question 1:**
+Look at line 8. What happens to the execution flow when \`fetch\` is called without \`await\`?
+*Hint: Does the code wait for the data?*
+
+**Question 2:**
+You are modifying \`state\` directly on line 15. In React, what is the correct way to update state to trigger a re-render?
+
+**Challenge:**
+Try guarding the usage of \`props.items.map\` on line 20. What if \`items\` is null?
+Write a guard clause and check back with me!`,
+
+                livefix: `**[Magicoder] Live Sentinel Active**
+*Monitoring your keystrokes...*
+
+**Status Update:**
+- **Syntax:** ✅ Valid
+- **Types:** ⚠️ 1 Warning
+- **Style:** ✅ Consistent
+
+**Real-time Suggestion:**
+You just defined \`const value\`, but it seems you intend to reassign it later.
+-> **Auto-Correction:** Change \`const\` to \`let\`.
+
+**Code Snippet:**
+\`\`\`typescript
+let value = 0; // Changed from const
+if (condition) {
+    value = 10;
+}
+\`\`\`
+
+*Standing by for further input...*`
+            };
+            return magicoderResponses[mode];
+        }
 
         const mockResponses: Record<AIMode, string> = {
             debug: `**Bug Analysis Complete**

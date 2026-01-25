@@ -15,8 +15,6 @@ export interface User {
     onboardingCompleted?: boolean;
 }
 
-
-
 interface LoginResponse {
     user: User;
     token: string;
@@ -50,7 +48,8 @@ class AuthService {
     }
 
     async logout(): Promise<void> {
-        if (!apiClient.isMockMode()) {
+        const token = localStorage.getItem('deexen_token');
+        if (token && !apiClient.isMockMode()) {
             try {
                 await apiClient.post('/auth/logout');
             } catch {
@@ -67,7 +66,7 @@ class AuthService {
             return this.mockGetProfile();
         }
 
-        return apiClient.get<User>('/auth/profile');
+        return apiClient.get<User>('/auth/me');
     }
 
     async updateProfile(data: Partial<User>): Promise<User> {
