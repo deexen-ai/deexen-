@@ -29,8 +29,8 @@ const getFileIcon = (name: string) => {
     if (name.endsWith('.ts')) return <span className="text-blue-400 text-[10px] font-medium">TS</span>;
     if (name.endsWith('.css')) return <Hash className="h-3.5 w-3.5 text-purple-400" />;
     if (name.endsWith('.json')) return <span className="text-yellow-400 text-[10px] font-medium">{'{}'}</span>;
-    if (name.endsWith('.md')) return <span className="text-neutral-500 text-[10px] font-medium">MD</span>;
-    return <FileText className="h-3.5 w-3.5 text-neutral-500" />;
+    if (name.endsWith('.md')) return <span className="text-[var(--text-secondary)] text-[10px] font-medium">MD</span>;
+    return <FileText className="h-3.5 w-3.5 text-[var(--text-secondary)]" />;
 };
 
 const FileTreeItem = ({ node, level, onContextMenu, renamingId, onRenameSubmit }: FileTreeItemProps) => {
