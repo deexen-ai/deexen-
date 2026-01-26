@@ -7,6 +7,7 @@ import { cn } from '@/utils/cn';
 import Header from '@/components/layout/Header';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import AvatarUpload from '@/components/profile/AvatarUpload';
 
 type SettingsTab = 'profile' | 'privacy' | 'settings' | 'theme' | 'account';
 
@@ -21,12 +22,17 @@ export default function SettingsPage() {
     // Form States (example for Profile)
     const [name, setName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
+    const [newAvatar, setNewAvatar] = useState<string | null>(null);
 
     const handleSave = async () => {
         setIsLoading(true);
         // Simulate API call
         setTimeout(() => {
-            updateUser({ name, email });
+            updateUser({
+                name,
+                email,
+                ...(newAvatar && { avatar: newAvatar })
+            });
             setIsLoading(false);
         }, 800);
     };
@@ -103,10 +109,14 @@ export default function SettingsPage() {
                             {activeTab === 'profile' && (
                                 <div className="max-w-xl space-y-6">
                                     <div className="flex items-center space-x-4">
-                                        <img src={user.avatar} alt={user.name} className="w-20 h-20 rounded-full border border-[var(--border-default)]" />
+                                        <AvatarUpload
+                                            currentAvatar={user?.avatar || ''}
+                                            onAvatarChange={(_, base64) => setNewAvatar(base64)}
+                                            size="md"
+                                        />
                                         <div>
-                                            <Button variant="outline" size="sm">Change Avatar</Button>
-                                            <p className="text-xs text-[var(--text-secondary)] mt-2">JPG or PNG, max 1MB</p>
+                                            <p className="text-sm font-medium text-[var(--text-primary)]">Profile Photo</p>
+                                            <p className="text-xs text-[var(--text-secondary)] mt-1">JPG or PNG, max 2MB</p>
                                         </div>
                                     </div>
 

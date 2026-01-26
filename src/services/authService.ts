@@ -120,7 +120,7 @@ class AuthService {
             joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
             lastActive: 'Just now',
             projectCount: 0,
-            onboardingCompleted: true,
+            onboardingCompleted: false, // User must go through onboarding
         };
 
         const token = 'mock-jwt-token-' + Math.random().toString(36).substring(2);

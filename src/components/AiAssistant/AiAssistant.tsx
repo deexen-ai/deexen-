@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { Bot, Send, X, Sparkles, User, Zap } from 'lucide-react';
 import { useAIStore } from '@/stores/useAIStore';
-import { projects } from '@/data/projects';
+import { useProjectStore } from '@/stores/useProjectStore';
 import { cn } from '@/utils/cn';
 
 export default function AiAssistant() {
     const { isChatOpen, toggleChat, messages, addMessage, updateLastMessage, isLoading, setLoading, triggerMessage, setTriggerMessage } = useAIStore();
+    const { projects } = useProjectStore();
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);

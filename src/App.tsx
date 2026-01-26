@@ -6,8 +6,10 @@ import DashboardPage from '@/pages/DashboardPage';
 import ProfilePage from '@/pages/ProfilePage';
 import OnboardingPage from '@/pages/OnboardingPage';
 import SettingsPage from '@/pages/SettingsPage';
+import LandingPage from '@/pages/LandingPage';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useThemeStore } from '@/stores/useThemeStore';
+import Toaster from '@/components/ui/Toaster';
 
 import WorkspacePage from '@/pages/WorkspacePage';
 
@@ -20,9 +22,10 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   }
 
   // Redirect to onboarding if not completed (and allow for optional chaining in case user struct is partial)
-  // if (!user?.onboardingCompleted) {
-  //   return <Navigate to="/onboarding" replace />;
-  // }
+  // Redirect to onboarding if not completed (and allow for optional chaining in case user struct is partial)
+  if (!user?.onboardingCompleted) {
+    return <Navigate to="/onboarding" replace />;
+  }
 
   return children;
 }
@@ -103,8 +106,9 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<LandingPage />} />
       </Routes>
+      <Toaster />
     </Router>
   );
 }

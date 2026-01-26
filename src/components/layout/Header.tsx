@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, LogOut, User, ChevronDown } from 'lucide-react';
+import { Settings, LogOut, User, ChevronDown, Sun, Moon } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useThemeStore } from '@/stores/useThemeStore';
 
 import { cn } from '@/utils/cn';
 
 export default function Header() {
     const navigate = useNavigate();
     const { user, logout } = useAuthStore();
+    const { theme, toggleTheme } = useThemeStore();
 
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -51,6 +53,13 @@ export default function Header() {
             <div className="flex items-center space-x-2">
 
 
+
+                <button
+                    onClick={toggleTheme}
+                    className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] rounded-md transition-colors mr-2"
+                >
+                    {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                </button>
 
                 {/* User Dropdown */}
                 <div className="relative" ref={dropdownRef}>
