@@ -386,7 +386,7 @@ export default function AIPanel() {
                                 <span>{currentModel.name}</span>
                             </button>
                             {showModelDropdown && (
-                                <div className="absolute bottom-full left-0 mb-1 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg shadow-xl py-1 min-w-[200px] z-50">
+                                <div className="absolute bottom-full left-0 mb-1 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg shadow-xl py-1 min-w-[150px] z-50">
                                     <div className="px-3 py-1.5 text-[10px] text-[var(--text-secondary)] uppercase tracking-wider">Model</div>
                                     {AI_MODELS.map((model) => (
                                         <button

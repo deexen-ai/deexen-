@@ -3,14 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import {
     FolderOpen, Plus,
     Search, Star, MoreHorizontal,
-    ExternalLink, Sparkles
+    ExternalLink, Sparkles, LayoutTemplate, Github
 } from 'lucide-react';
+
 import { cn } from '@/utils/cn';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useAIStore } from '@/stores/useAIStore';
 import { useFileStore } from '@/stores/useFileStore';
+import { useProjectStore } from '@/stores/useProjectStore';
+import { useToastStore } from '@/stores/useToastStore';
 
-import { projects } from '@/data/projects';
+import CreateProjectModal from '@/components/dashboard/CreateProjectModal';
 
 import Header from '@/components/layout/Header';
 import AiAssistant from '@/components/AiAssistant/AiAssistant';
@@ -20,7 +23,9 @@ export default function DashboardPage() {
     const { user } = useAuthStore();
     const { setChatOpen, setTriggerMessage } = useAIStore();
     const { setProjectName } = useFileStore();
+    const { projects } = useProjectStore();
     const [searchQuery, setSearchQuery] = useState('');
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     const handleOpenWorkspace = (name: string) => {
         setProjectName(name);
@@ -53,7 +58,45 @@ export default function DashboardPage() {
                     <p className="text-sm text-[var(--text-secondary)]">Select a project to open in the editor</p>
                 </div>
 
-                {/* Actions Row */}
+                {/* Actions Section */}
+                <div className="flex flex-col items-center justify-center mb-8 space-y-4">
+                    {/* Search Bar - Moved to top right or kept separate? 
+                        User asked to move new project button to middle.
+                        Let's put search bar on top left? Or just separate div.
+                        Let's keep search on the left of the listing for now, or separate row.
+                        Actually, putting search in the list header might be cleaner if we have a big hero section.
+                        For now, I'll separate the Search and the Create Actions.
+                    */}
+
+                    {/* Main Create Button */}
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-base font-medium rounded-md transition-all transform hover:scale-101 shadow-lg shadow-orange-500/20"
+                    >
+                        <Plus className="w-5 h-5" />
+                        <span>New Project</span>
+                    </button>
+
+                    {/* Secondary Actions */}
+                    <div className="flex items-center space-x-4">
+                        <button
+                            onClick={() => useToastStore.getState().addToast("Start with a template feature will come in desktop IDE", 'info')}
+                            className="flex items-center space-x-2 px-4 py-2 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-default)] rounded-md text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                        >
+                            <LayoutTemplate className="w-4 h-4" />
+                            <span>Start with a template</span>
+                        </button>
+                        <button
+                            onClick={() => useToastStore.getState().addToast("Clone from GitHub feature will come in desktop IDE", 'info')}
+                            className="flex items-center space-x-2 px-4 py-2 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-default)] rounded-md text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                        >
+                            <Github className="w-4 h-4" />
+                            <span>Clone from GitHub</span>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Search & List Actions */}
                 <div className="flex items-center justify-between mb-4">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
@@ -65,10 +108,7 @@ export default function DashboardPage() {
                             className="w-64 h-8 pl-9 pr-3 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-neutral-500 transition-colors"
                         />
                     </div>
-                    <button className="flex items-center space-x-1.5 h-8 px-3 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded transition-colors">
-                        <Plus className="w-4 h-4" />
-                        <span>New Project</span>
-                    </button>
+                    {/* Filter or Sort could go here */}
                 </div>
 
                 {/* Projects List */}
@@ -151,6 +191,10 @@ export default function DashboardPage() {
                     <span>{filteredProjects.length} {filteredProjects.length === 1 ? 'project' : 'projects'}</span>
                 </div>
             </div>
+            <CreateProjectModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+            />
             <AiAssistant />
         </div>
     );

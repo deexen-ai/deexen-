@@ -4,6 +4,8 @@ import Modal from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 
+import AvatarUpload from './AvatarUpload';
+
 interface EditProfileModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -12,6 +14,7 @@ interface EditProfileModalProps {
 export default function EditProfileModal({ isOpen, onClose }: EditProfileModalProps) {
     const { user, updateUser } = useAuthStore();
     const [name, setName] = useState(user?.name || '');
+    const [newAvatar, setNewAvatar] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     // Mock additional fields if they were in the user object
@@ -26,7 +29,10 @@ export default function EditProfileModal({ isOpen, onClose }: EditProfileModalPr
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        updateUser({ name });
+        updateUser({
+            name,
+            ...(newAvatar && { avatar: newAvatar })
+        });
         // In a real app, we would update bio, location, etc. in the backend here
         // For now, we are just updating the name in auth store
 
@@ -37,6 +43,14 @@ export default function EditProfileModal({ isOpen, onClose }: EditProfileModalPr
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Edit Profile">
             <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="flex justify-center mb-6">
+                    <AvatarUpload
+                        currentAvatar={user?.avatar || ''}
+                        onAvatarChange={(_, base64) => setNewAvatar(base64)}
+                        size="lg"
+                    />
+                </div>
+
                 <div className="space-y-2">
                     <label className="text-sm font-medium text-[var(--text-secondary)]">Display Name</label>
                     <Input
