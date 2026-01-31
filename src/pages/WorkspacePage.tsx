@@ -1,17 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { FileCode, Search, GitBranch, Settings, Sparkles, ArrowLeft, Puzzle, Blocks } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { FileCode, Search, GitBranch, Settings, ArrowLeft, Puzzle, Blocks, Sparkles } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 
-import { useFileStore, getFileBreadcrumbs } from '@/stores/useFileStore';
+import { useFileStore, getFileBreadcrumbs, type FileNode } from '@/stores/useFileStore';
 import { useLayoutStore } from '@/stores/useLayoutStore';
+import { useProjectStore } from '@/stores/useProjectStore';
 import FileExplorer from '@/components/file-explorer/FileExplorer';
 import CodeEditor from '@/components/editor/CodeEditor';
+import { runWorkspaceTour } from '@/services/tourService';
 import Terminal from '@/components/terminal/Terminal';
 import AIPanel from '@/components/ai-panel/AIPanel';
 
 // Activity Bar Component
-const ActivityBar = ({ activeView, setActiveView }: { activeView: string, setActiveView: (v: string) => void }) => {
+// ActivityBar Component
+interface ActivityBarProps {
+    activeView: string;
+    onIconClick: (viewId: string) => void;
+}
+
+const ActivityBar = ({ activeView, onIconClick }: ActivityBarProps) => {
     const icons = [
         { id: 'explorer', icon: FileCode, label: 'Explorer' },
         { id: 'search', icon: Search, label: 'Search' },
@@ -24,7 +32,8 @@ const ActivityBar = ({ activeView, setActiveView }: { activeView: string, setAct
             {icons.map(item => (
                 <button
                     key={item.id}
-                    onClick={() => setActiveView(item.id)}
+                    id={`activity-bar-${item.id}`}
+                    onClick={() => onIconClick(item.id)}
                     title={item.label}
                     className={cn(
                         "w-10 h-10 flex items-center justify-center relative transition-colors",
@@ -60,10 +69,69 @@ export default function WorkspacePage() {
     const [terminalHeight, setTerminalHeight] = useState(200);
     const [isDragging, setIsDragging] = useState<'left' | 'right' | 'terminal' | null>(null);
 
-    const { isSidebarOpen, isTerminalOpen, isAIPanelOpen, toggleSidebar, toggleTerminal, toggleAIPanel } = useLayoutStore();
+    const { isSidebarOpen, setSidebarOpen, toggleSidebar, isTerminalOpen, toggleTerminal, toggleAIPanel, isAIPanelOpen } = useLayoutStore();
 
-    const { files, activeFileId, projectName } = useFileStore();
+    const { projectId } = useParams();
+    const { projects } = useProjectStore();
+
+    const { activeFileId, projectName, setFiles, setProjectName } = useFileStore();
+    const files = useFileStore(state => state.files); // Selector for persistence/updates
+
+    const handleIconClick = (viewId: string) => {
+        if (activeSidebarView === viewId) {
+            // Toggle sidebar if clicking the same icon
+            toggleSidebar();
+        } else {
+            // Switch view and ensure sidebar is open
+            setActiveSidebarView(viewId);
+            if (!isSidebarOpen) {
+                setSidebarOpen(true);
+            }
+        }
+    };
+
     const activeFilePath = activeFileId ? getFileBreadcrumbs(files, activeFileId) : '';
+
+    // Load Project Data
+    useEffect(() => {
+        if (!projectId) return;
+
+        const project = projects.find(p => p.id === projectId);
+        if (project) {
+            setProjectName(project.name);
+
+            if (project.fileTree) {
+                setFiles(project.fileTree);
+            } else {
+                // Default structure for new/empty projects
+                const defaultFiles: FileNode[] = [
+                    {
+                        id: 'root',
+                        name: 'root',
+                        type: 'folder',
+                        isOpen: true,
+                        children: [
+                            {
+                                id: 'src',
+                                name: 'src',
+                                type: 'folder',
+                                isOpen: true,
+                                children: [
+                                    { id: 'App.tsx', name: 'App.tsx', type: 'file', content: '// ' + project.name }
+                                ]
+                            },
+                            { id: 'package.json', name: 'package.json', type: 'file', content: '{}' },
+                            { id: 'README.md', name: 'README.md', type: 'file', content: '# ' + project.name }
+                        ]
+                    }
+                ];
+                setFiles(defaultFiles);
+            }
+        } else {
+            // Project not found - likely deleted or invalid ID
+            navigate('/dashboard');
+        }
+    }, [projectId, projects, setFiles, setProjectName, navigate]);
 
 
 
@@ -100,6 +168,16 @@ export default function WorkspacePage() {
         };
     }, [isDragging]);
 
+    // Tour Trigger
+    const { hasSeenWorkspaceTour, completeWorkspaceTour } = useLayoutStore();
+    useEffect(() => {
+        if (!hasSeenWorkspaceTour) {
+            setTimeout(() => {
+                runWorkspaceTour(completeWorkspaceTour);
+            }, 1000);
+        }
+    }, [hasSeenWorkspaceTour, completeWorkspaceTour]);
+
     return (
         <div className={cn(
             "h-screen w-screen flex flex-col bg-[var(--bg-canvas)] overflow-hidden text-[var(--text-primary)] font-sans",
@@ -108,6 +186,7 @@ export default function WorkspacePage() {
             {/* Title Bar */}
             <div className="h-8 bg-[var(--bg-canvas)] border-b border-[var(--border-default)] flex items-center px-3 text-xs select-none">
                 <div
+                    id="back-to-dashboard-btn"
                     className="flex items-center space-x-2 cursor-pointer hover:text-[var(--text-primary)] transition-colors text-[var(--text-secondary)]"
                     onClick={() => navigate('/dashboard')}
                 >
@@ -143,6 +222,7 @@ export default function WorkspacePage() {
                         </div>
                     </button>
                     <button
+                        id="terminal-toggle-btn"
                         onClick={toggleTerminal}
                         title="Toggle Terminal"
                         className={cn(
@@ -180,7 +260,9 @@ export default function WorkspacePage() {
             {/* Main Layout */}
             <div className="flex-1 flex overflow-hidden">
                 {/* Activity Bar */}
-                <ActivityBar activeView={activeSidebarView} setActiveView={setActiveSidebarView} />
+                <div id="activity-bar">
+                    <ActivityBar activeView={activeSidebarView} onIconClick={handleIconClick} />
+                </div>
 
                 {/* Left Sidebar */}
                 {isSidebarOpen && (
@@ -198,7 +280,11 @@ export default function WorkspacePage() {
 
                         {/* Sidebar Content */}
                         <div className="flex-1 overflow-auto">
-                            {activeSidebarView === 'explorer' && <FileExplorer />}
+                            {activeSidebarView === 'explorer' && (
+                                <div id="file-explorer-pane">
+                                    <FileExplorer />
+                                </div>
+                            )}
                             {activeSidebarView === 'search' && (
                                 <div className="p-3">
                                     <input
@@ -229,8 +315,31 @@ export default function WorkspacePage() {
                     </div>
                 )}
 
-                {/* Center Area */}
-                <div className="flex-1 flex flex-col min-w-0">
+                {/* Main Editor Area */}
+                <div id="editor-pane" className="flex-1 flex flex-col min-w-0 bg-[#1e1e1e]">
+                    {/* Editor Header / Tabs */}
+                    <div className="h-9 bg-[#2d2d2d] flex items-center px-4 border-b border-[#1e1e1e] justify-between">
+                        <span className="text-sm text-gray-300">{activeFilePath}</span>
+                        <div className="flex items-center space-x-2">
+                            <button
+                                id="run-project-btn"
+                                className="p-1 hover:bg-[#3d3d3d] rounded text-green-500" title="Run Project">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </button>
+                            <button
+                                id="ai-panel-toggle"
+                                onClick={toggleAIPanel}
+                                className={cn("p-1 hover:bg-[#3d3d3d] rounded transition-colors", isAIPanelOpen ? "text-orange-500" : "text-gray-400")}
+                                title="Toggle AI Panel"
+                            >
+                                <Sparkles className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+
                     {/* Editor */}
                     <div className="flex-1 min-h-0 bg-[var(--bg-canvas)]">
                         <CodeEditor />
@@ -267,7 +376,7 @@ export default function WorkspacePage() {
             </div>
 
             {/* Status Bar */}
-            <div className="h-[22px] bg-[#007acc] border-t border-[var(--border-default)] flex items-center px-3 text-[11px] text-white justify-between select-none">
+            <div className="h-[22px] bg-[#007acc] border-t border-[var(--border-default)] flex items-center px-3 text-[11px] text-white justify-between select-none flex-shrink-0">
                 <div className="flex items-center space-x-3">
                     <span className="flex items-center">
                         <GitBranch className="w-3 h-3 mr-1" />

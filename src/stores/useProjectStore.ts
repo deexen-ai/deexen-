@@ -8,6 +8,7 @@ interface ProjectState {
     deleteProject: (id: string) => void;
     updateProject: (id: string, updates: Partial<Project>) => void;
     toggleStar: (id: string) => void;
+    setProjects: (projects: Project[]) => void;
 }
 
 export const useProjectStore = create<ProjectState>()(
@@ -47,6 +48,8 @@ export const useProjectStore = create<ProjectState>()(
                     p.id === id ? { ...p, starred: !p.starred } : p
                 )
             })),
+
+            setProjects: (projects) => set({ projects }),
         }),
         {
             name: 'deexen-projects',

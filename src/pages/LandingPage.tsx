@@ -4,26 +4,27 @@ import { Button } from '@/components/ui/Button';
 import { useThemeStore } from '@/stores/useThemeStore';
 
 export default function LandingPage() {
-    const navigate = useNavigate();
     const { theme, toggleTheme } = useThemeStore();
+    const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen bg-[#fafafa] dark:bg-[#0a0a0a] text-neutral-900 dark:text-neutral-100 font-sans selection:bg-orange-200 dark:selection:bg-orange-900/30">
+        <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans selection:bg-orange-200 dark:selection:bg-orange-900/30">
 
             {/* Navigation */}
-            <nav className="fixed top-0 left-0 right-0 z-50 h-16 bg-[#fafafa]/80 dark:bg-[#0a0a0a]/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between px-6 max-w-2xl mx-auto w-full">
+            <nav className="fixed top-0 left-0 right-0 z-50 h-16 bg-[var(--bg-canvas)]/80 backdrop-blur-md border-b border-[var(--border-default)] flex items-center justify-between px-6 max-w-2xl mx-auto w-full transition-colors duration-300">
                 <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/')}>
                     <img src="/deexenlogo.png" alt="Deexen" className="h-8" />
-                    <span className="text-xl font-display font-medium tracking-tight">Deexen</span>
+                    <span className="text-xl font-display font-bold tracking-tight text-[var(--text-primary)]">Deexen</span>
                 </div>
                 <div className="flex items-center space-x-4">
                     <button
                         onClick={toggleTheme}
-                        className="p-2 text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white transition-colors"
+                        className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] rounded-lg transition-colors"
+                        title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                     >
                         {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                     </button>
-                    <Button variant="ghost" className="text-neutral-600 dark:text-neutral-200" onClick={() => navigate('/login')}>Log in</Button>
+                    <Button variant="ghost" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => navigate('/login')}>Log in</Button>
                     <Button variant="primary" onClick={() => navigate('/signup')}>Sign up</Button>
                 </div>
             </nav>
@@ -32,18 +33,18 @@ export default function LandingPage() {
 
                 {/* Hero Section */}
                 <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-24">
-                    <div className="inline-flex items-center space-x-2 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-full px-3 py-1 text-xs font-medium mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="inline-flex items-center space-x-2 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-full px-3 py-1 text-xs font-medium mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                         <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
-                        <span className="text-neutral-600 dark:text-neutral-400">New: User Profiles & Activity Graph</span>
-                        <ArrowRight className="w-3 h-3 text-neutral-400 ml-1" />
+                        <span className="text-[var(--text-secondary)]">New: User Profiles & Activity Graph</span>
+                        <ArrowRight className="w-3 h-3 text-[var(--text-tertiary)] ml-1" />
                     </div>
 
-                    <h1 className="font-display text-5xl md:text-7xl leading-[1] mb-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-100 tracking-tight">
+                    <h1 className="font-display text-5xl md:text-7xl leading-[1] mb-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-100 tracking-tight text-[var(--text-primary)]">
                         The Professional IDE <br />
-                        <span className="text-neutral-400 dark:text-neutral-600 italic">for builders to show & tell.</span>
+                        <span className="text-[var(--text-tertiary)] italic">for builders to show & tell.</span>
                     </h1>
 
-                    <p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-lg mx-auto mb-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
+                    <p className="text-lg text-[var(--text-secondary)] max-w-lg mx-auto mb-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
                         A modern development environment that combines professional coding tools with social proof. Showcase your skills, track your progress, and build your legacy.
                     </p>
 
@@ -51,7 +52,7 @@ export default function LandingPage() {
                         <Button variant="primary" size="lg" className="h-12 px-8 text-base bg-orange-600 hover:bg-orange-500 text-white rounded-full" onClick={() => navigate('/signup')}>
                             Get Started
                         </Button>
-                        <Button variant="outline" size="lg" className="text-neutral-600 dark:text-neutral-200 h-12 px-8 text-base rounded-full border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800" onClick={() => navigate('/login')}>
+                        <Button variant="outline" size="lg" className="h-12 px-8 text-base rounded-full border-[var(--border-default)] text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)]" onClick={() => navigate('/login')}>
                             Sign In
                         </Button>
                     </div>

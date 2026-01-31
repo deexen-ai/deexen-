@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Plus, Mic, ChevronUp, Image, FileText, AtSign, ThumbsUp, ThumbsDown, Copy, Check } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useAIStore } from '@/stores/useAIStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { MODE_CONFIG, AI_MODES } from '@/config/aiModes';
 import type { AIMode } from '@/config/aiModes';
 import { aiService } from '@/services/aiService';
@@ -107,8 +108,12 @@ export default function AIPanel() {
         setError(null);
 
         try {
+            // Get user skill level
+            const user = useAuthStore.getState().user;
+            const skillLevel = user?.skillLevel || 'intermediate';
+
             // Use mock for demo
-            const result = await aiService.mockAnalyze(selectedMode, code);
+            const result = await aiService.mockAnalyze(selectedMode, code, skillLevel);
 
             const responseData = {
                 mode: selectedMode,

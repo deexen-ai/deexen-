@@ -416,7 +416,7 @@ export default function FileExplorer() {
         setRenamingId(null);
     }
 
-    const rootFiles = files[0].children || [];
+    const rootFiles = files[0]?.children || [];
 
     return (
         <div

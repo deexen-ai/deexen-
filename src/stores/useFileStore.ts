@@ -32,6 +32,7 @@ interface FileState {
     pasteNode: (parentId: string | null) => void;
     setProjectName: (name: string) => void;
     moveNode: (activeId: string, overId: string) => void;
+    setFiles: (files: FileNode[]) => void;
 }
 
 const initialFiles: FileNode[] = [
@@ -330,13 +331,13 @@ export const useFileStore = create<FileState>()(
                 };
             }),
             pendingMoveNode: (activeId: string, overId: string) => {
-                // Placeholder if we need separate logic, but for now direct implementation
+                // Placeholder
             },
 
             moveNode: (activeId: string, overId: string) => set((state) => {
                 if (activeId === overId) return state;
 
-                // 1. Find the active node
+                // Helper: Find node
                 const findNode = (nodes: FileNode[], targetId: string): FileNode | null => {
                     for (const node of nodes) {
                         if (node.id === targetId) return node;
@@ -351,67 +352,7 @@ export const useFileStore = create<FileState>()(
                 const activeNode = findNode(state.files, activeId);
                 if (!activeNode) return state;
 
-                // 2. Remove active node from its current parent
-                const removeNode = (nodes: FileNode[], idToRemove: string): FileNode[] => {
-                    return nodes.filter(n => n.id !== idToRemove).map(n => ({
-                        ...n,
-                        children: n.children ? removeNode(n.children, idToRemove) : undefined
-                    }));
-                };
-
-                let newFiles = removeNode(state.files, activeId);
-
-                // 3. Insert logic
-                const overNode = findNode(state.files, overId);
-                let targetParentId: string | null = null;
-
-                // Finding parent of overId
-                const findParent = (nodes: FileNode[], targetId: string, parentId: string | null = null): string | null => {
-                    for (const node of nodes) {
-                        if (node.id === targetId) return parentId;
-                        if (node.children) {
-                            const found = findParent(node.children, targetId, node.id);
-                            if (found) return found;
-                        }
-                    }
-                    return null;
-                };
-
-                const overParentId = findParent(state.files, overId);
-
-                if (overNode && overNode.type === 'folder') {
-                    // Drop inside folder
-                    targetParentId = overNode.id;
-                } else {
-                    // Drop sibling
-                    targetParentId = overParentId;
-                }
-
-                // Insert Helper
-                const insertIntoParent = (nodes: FileNode[], pid: string | null, newNode: FileNode): FileNode[] => {
-                    if (pid === 'root' || (!pid && nodes[0].id === 'root')) {
-                        const root = nodes[0];
-                        if (pid === 'root') {
-                            return [{
-                                ...root,
-                                children: [...(root.children || []), newNode]
-                            }];
-                        }
-                    }
-
-                    return nodes.map(node => {
-                        if (node.id === pid) {
-                            if (node.type !== 'folder') return node;
-                            return { ...node, children: [...(node.children || []), newNode], isOpen: true }; // Open folder on drop
-                        }
-                        if (node.children) {
-                            return { ...node, children: insertIntoParent(node.children, pid, newNode) };
-                        }
-                        return node;
-                    });
-                };
-
-                // Prevent circular reference
+                // Helper: Check descendant to prevent circular moves
                 const isDescendant = (parent: FileNode, targetId: string): boolean => {
                     if (parent.id === targetId) return true;
                     if (parent.children) {
@@ -420,26 +361,81 @@ export const useFileStore = create<FileState>()(
                     return false;
                 };
 
-                if (activeNode.type === 'folder' && targetParentId && isDescendant(activeNode, targetParentId)) {
-                    return state; // Cancel move
-                }
+                // Helper: Find Parent ID
+                const findParentId = (nodes: FileNode[], targetId: string, currentParentId: string | null = null): string | null => {
+                    for (const node of nodes) {
+                        if (node.id === targetId) return currentParentId;
+                        if (node.children) {
+                            const found = findParentId(node.children, targetId, node.id);
+                            if (found) return found;
+                        }
+                    }
+                    return null;
+                };
 
-                const nodeToInsert = { ...activeNode };
+                // Determine effective target parent
+                const overNode = findNode(state.files, overId);
+                let targetParentId: string | null = null;
 
                 if (overNode && overNode.type === 'folder') {
-                    newFiles = insertIntoParent(newFiles, overNode.id, nodeToInsert);
+                    targetParentId = overNode.id;
                 } else {
-                    newFiles = insertIntoParent(newFiles, overParentId || 'root', nodeToInsert);
+                    targetParentId = findParentId(state.files, overId) || 'root'; // Default to root if no parent found (top level items)
                 }
+
+                // Validation: Cannot move folder into its own descendant
+                if (activeNode.type === 'folder' && targetParentId && isDescendant(activeNode, targetParentId)) {
+                    return state;
+                }
+
+                // Helper: Remove Node
+                const removeNode = (nodes: FileNode[], idToRemove: string): FileNode[] => {
+                    return nodes.filter(n => n.id !== idToRemove).map(n => ({
+                        ...n,
+                        children: n.children ? removeNode(n.children, idToRemove) : undefined
+                    }));
+                };
+
+                // Helper: Insert Node
+                const insertNode = (nodes: FileNode[], pid: string | null, newNode: FileNode): FileNode[] => {
+                    // Handle root insertion
+                    if (pid === 'root' || pid === null) {
+                        // Assuming the first node is the project root folder "root"
+                        const root = nodes[0];
+                        if (root.id === 'root') {
+                            return [{ ...root, children: [...(root.children || []), newNode] }];
+                        }
+                        // If structure is different, just append to array? No, strict tree.
+                        // For now assume single root.
+                    }
+
+                    return nodes.map(node => {
+                        if (node.id === pid) {
+                            if (node.type !== 'folder') return node;
+                            return {
+                                ...node,
+                                children: [...(node.children || []), newNode],
+                                isOpen: true
+                            };
+                        }
+                        if (node.children) {
+                            return { ...node, children: insertNode(node.children, pid, newNode) };
+                        }
+                        return node;
+                    });
+                };
+
+                // Execute Move
+                let newFiles = removeNode(state.files, activeId);
+                newFiles = insertNode(newFiles, targetParentId, activeNode);
 
                 return { files: newFiles };
             }),
+
+            setFiles: (files: FileNode[]) => set({ files }),
         }),
         {
-            name: 'deexen-file-storage', // unique name
-            // Explicitly do NOT persist 'files' for now if user wants clean slate logic, BUT user asked for 'project name, files'.
-            // So we persist everything relevant.
-
+            name: 'deexen-file-storage',
             partialize: (state) => ({
                 files: state.files,
                 openFiles: state.openFiles,
@@ -449,6 +445,7 @@ export const useFileStore = create<FileState>()(
         }
     )
 );
+
 
 export const getFileBreadcrumbs = (files: FileNode[], targetId: string): string => {
     const findPath = (nodes: FileNode[], currentPath: string[]): string[] | null => {

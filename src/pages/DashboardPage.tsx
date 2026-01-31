@@ -2,20 +2,28 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Plus, Search, Terminal,
-    GitBranch, Activity, AlertCircle, Settings
+    GitBranch, Activity, AlertCircle, Settings, Sparkles, Sun, Moon
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { useFileStore } from '@/stores/useFileStore';
-import { projects } from '@/data/projects';
+import { useAIStore } from '@/stores/useAIStore';
+import { useThemeStore } from '@/stores/useThemeStore';
+import { useLayoutStore } from '@/stores/useLayoutStore';
+import { useProjectStore } from '@/stores/useProjectStore';
 import Sidebar from '@/components/layout/Sidebar';
 import AiAssistant from '@/components/AiAssistant/AiAssistant';
+import NewProjectModal from '@/components/dashboard/NewProjectModal';
+import { runDashboardTour } from '@/services/tourService';
 
 export default function DashboardPage() {
     const navigate = useNavigate();
     const { user } = useAuthStore();
-    const { setProjectName } = useFileStore();
+    const { theme, toggleTheme } = useThemeStore();
+    const { isSidebarOpen } = useLayoutStore();
+    const { projects } = useProjectStore();
+
     const [searchQuery, setSearchQuery] = useState('');
+    const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -32,10 +40,20 @@ export default function DashboardPage() {
         };
     }, []);
 
-    const handleOpenWorkspace = (name: string) => {
-        setProjectName(name);
-        navigate('/workspace');
+    const handleOpenWorkspace = (projectId: string) => {
+        navigate(`/workspace/${projectId}`);
     };
+
+    // Tour Trigger
+    const { hasSeenDashboardTour, completeDashboardTour } = useLayoutStore();
+    useEffect(() => {
+        if (!hasSeenDashboardTour) {
+            // Small delay to ensure animations are done
+            setTimeout(() => {
+                runDashboardTour(completeDashboardTour);
+            }, 1000);
+        }
+    }, [hasSeenDashboardTour, completeDashboardTour]);
 
     if (!user) return null;
 
@@ -46,31 +64,40 @@ export default function DashboardPage() {
     return (
         <div className="flex h-screen w-full bg-[var(--bg-main)] font-sans text-[var(--text-primary)] overflow-hidden">
             {/* 1. Sidebar */}
-            <Sidebar />
+            <div id="sidebar-nav">
+                <Sidebar />
+            </div>
 
             {/* 2. Main Canvas */}
-            <main className="flex-1 ml-64 h-full overflow-y-auto overflow-x-hidden relative">
-
+            <main className={cn(
+                "flex-1 h-full overflow-y-auto overflow-x-hidden relative transition-all duration-300",
+                isSidebarOpen ? "ml-64" : "ml-20"
+            )}>
                 {/* Sticky Header */}
-                <header className="sticky top-0 z-40 w-full h-16 bg-[var(--bg-main)]/80 backdrop-blur-md border-b border-[var(--border-default)] flex items-center justify-between px-8">
+                <header className="sticky top-0 z-40 w-full h-16 glass-panel border-b border-[var(--border-muted)] flex items-center justify-between px-8">
                     {/* Breadcrumbs */}
                     <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                        <span className="hover:text-[var(--text-primary)] cursor-pointer transition-colors">deexen</span>
+                        <span
+                            onClick={() => navigate('/dashboard')}
+                            className="hover:text-[var(--text-primary)] cursor-pointer transition-colors"
+                        >
+                            deexen
+                        </span>
                         <span className="text-[var(--text-tertiary)]">/</span>
                         <span className="text-[var(--text-primary)] font-medium cursor-pointer">dashboard</span>
                     </div>
 
                     {/* Actions */}
                     <div className="flex items-center gap-4">
-                        <div className="relative group">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] group-focus-within:text-[var(--text-secondary)] transition-colors" />
+                        <div id="dashboard-search-bar" className="relative group">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] group-focus-within:text-orange-500 transition-colors" />
                             <input
                                 type="text"
                                 placeholder="Search..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 ref={searchInputRef}
-                                className="w-64 h-9 pl-9 pr-3 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-md text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all font-mono"
+                                className="w-64 h-9 pl-9 pr-3 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all font-sans"
                             />
                             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none">
                                 <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-[var(--border-default)] bg-[var(--bg-canvas)] px-1.5 font-mono text-[10px] font-medium text-[var(--text-tertiary)]">
@@ -78,8 +105,24 @@ export default function DashboardPage() {
                                 </kbd>
                             </div>
                         </div>
-                        <button className="h-9 px-4 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-md transition-colors flex items-center gap-2 shadow-sm">
-                            <Plus className="w-4 h-4" />
+                        <button
+                            id="theme-toggle-btn"
+                            onClick={toggleTheme}
+                            className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] rounded-lg transition-colors"
+                            title="Toggle theme"
+                        >
+                            {theme === 'dark' ? (
+                                <Sun className="w-5 h-5" />
+                            ) : (
+                                <Moon className="w-5 h-5" />
+                            )}
+                        </button>
+                        <button
+                            id="new-project-btn"
+                            onClick={() => setIsNewProjectModalOpen(true)}
+                            className="px-4 py-2 bg-gradient-primary text-white text-sm font-medium rounded-lg shadow-lg hover:shadow-orange-500/20 hover:scale-[1.02] transition-all flex items-center gap-2 group"
+                        >
+                            <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
                             New Project
                         </button>
                     </div>
@@ -123,22 +166,42 @@ export default function DashboardPage() {
                                     View All
                                 </button>
                             </div>
-                            <div className="grid gap-3">
-                                {filteredProjects.map((project) => (
-                                    <ProjectCard
-                                        key={project.id}
-                                        project={project}
-                                        onClick={() => handleOpenWorkspace(project.name)}
-                                    />
-                                ))}
+                            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl overflow-hidden shadow-sm">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-[var(--border-default)] bg-[var(--bg-canvas)] text-xs uppercase text-[var(--text-secondary)] font-medium">
+                                            <th className="px-6 py-4">Project Name</th>
+                                            <th className="px-6 py-4">Status</th>
+                                            <th className="px-6 py-4">Branch</th>
+                                            <th className="px-6 py-4">Language</th>
+                                            <th className="px-6 py-4">Last Updated</th>
+                                            <th className="px-6 py-4 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-[var(--border-default)]">
+                                        {filteredProjects.map((project) => (
+                                            <ProjectRow
+                                                key={project.id}
+                                                project={project}
+                                                onClick={() => handleOpenWorkspace(project.id)}
+                                            />
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
             </main>
 
+            {/* Modal */}
+            <NewProjectModal
+                isOpen={isNewProjectModalOpen}
+                onClose={() => setIsNewProjectModalOpen(false)}
+            />
+
             <AiAssistant />
-        </div>
+        </div >
     );
 }
 
@@ -153,106 +216,131 @@ interface MetricCardProps {
 
 function MetricCard({ title, value, icon: Icon, trend, valueColor = 'text-[var(--text-primary)]' }: MetricCardProps) {
     return (
-        <div className="bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-default)] rounded-lg p-5 transition-colors group cursor-pointer">
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl p-5 hover:border-orange-500/30 transition-all duration-300 group cursor-pointer shadow-sm hover:shadow-md">
             <div className="flex items-start justify-between">
                 <div className="flex-1">
-                    <p className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wide mb-2">
+                    <p className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wider mb-2">
                         {title}
                     </p>
-                    <p className={cn("text-2xl font-semibold mb-1", valueColor)}>
+                    <p className={cn("text-3xl font-display font-medium mb-1 text-[var(--text-primary)]", valueColor)}>
                         {value}
                     </p>
-                    <p className="text-[var(--text-secondary)] text-xs">
-                        {trend}
+                    <p className="text-[var(--text-secondary)] text-xs flex items-center gap-1">
+                        <span className="text-emerald-500 font-medium">{trend}</span>
                     </p>
                 </div>
-                <div className="p-2.5 bg-[var(--bg-canvas)] rounded-lg">
-                    <Icon className="w-5 h-5 text-[var(--text-tertiary)]" />
+                <div className="p-3 bg-violet-500/5 group-hover:bg-violet-500/10 rounded-xl transition-colors">
+                    <Icon className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                 </div>
             </div>
         </div>
     );
 }
 
-// Project Card Component
-interface ProjectCardProps {
+// Project Row Component
+interface ProjectRowProps {
     project: any;
     onClick: () => void;
 }
 
-function ProjectCard({ project, onClick }: ProjectCardProps) {
-    // Generate a mock commit hash
-    const commitHash = Math.random().toString(36).substring(2, 9);
+function ProjectRow({ project, onClick }: ProjectRowProps) {
+    const { setTriggerMessage, setChatOpen } = useAIStore();
+
+
+    const handleAiClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setTriggerMessage(`Explain ${project.name}`);
+        setChatOpen(true);
+    };
 
     const getLanguageColor = (lang: string) => {
         const colors: Record<string, string> = {
-            TypeScript: 'text-blue-500 bg-blue-500/10',
-            Python: 'text-yellow-500 bg-yellow-500/10',
-            React: 'text-cyan-500 bg-cyan-500/10',
-            Go: 'text-teal-500 bg-teal-500/10',
+            TypeScript: 'text-blue-500',
+            Python: 'text-yellow-500',
+            React: 'text-cyan-500',
+            Go: 'text-teal-500',
         };
-        return colors[lang] || 'text-gray-500 bg-gray-500/10';
+        return colors[lang] || 'text-gray-500';
     };
 
     return (
-        <div className="bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-default)] hover:border-[var(--border-default)]/80 rounded-lg px-5 py-4 transition-all duration-200 group shadow-sm hover:shadow-md">
-            <div className="flex items-center gap-4">
-                {/* Project Icon */}
-                <div className="w-11 h-11 rounded-lg bg-[#2d3748] dark:bg-[#27272a] flex items-center justify-center flex-shrink-0 shadow-sm border border-[var(--border-default)]">
-                    <span className="text-lg font-bold text-gray-400 dark:text-gray-500">
-                        {project.name.charAt(0).toUpperCase()}
+        <tr
+            onClick={onClick}
+            className="group hover:bg-[var(--bg-surface-hover)] transition-colors cursor-pointer"
+        >
+            {/* Name */}
+            <td className="px-6 py-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 dark:from-zinc-800 dark:to-zinc-900 flex items-center justify-center flex-shrink-0 shadow-sm border border-[var(--border-default)]">
+                        <span className="text-xs font-bold bg-clip-text text-transparent bg-gradient-to-br from-gray-600 to-gray-800 dark:from-gray-200 dark:to-gray-400">
+                            {project.name.charAt(0).toUpperCase()}
+                        </span>
+                    </div>
+                    <span className="font-semibold text-sm text-[var(--text-primary)] group-hover:text-orange-600 dark:group-hover:text-orange-500 transition-colors">
+                        {project.name}
                     </span>
                 </div>
+            </td>
 
-                {/* Project Info */}
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1.5">
-                        <h4
-                            onClick={onClick}
-                            className="text-sm font-semibold text-[var(--text-primary)] hover:text-orange-600 dark:hover:text-orange-500 transition-colors cursor-pointer"
-                        >
-                            {project.name}
-                        </h4>
-                        {project.status === 'Production' && (
-                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-500/10">
-                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-[10px] font-medium text-green-600 dark:text-green-400 uppercase tracking-wide">Production</span>
-                            </div>
-                        )}
+            {/* Status */}
+            <td className="px-6 py-4">
+                {project.status === 'Production' ? (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Prod</span>
                     </div>
+                ) : (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-500/10 border border-gray-500/20">
+                        <div className="w-1.5 h-1.5 rounded-full bg-gray-500" />
+                        <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Dev</span>
+                    </div>
+                )}
+            </td>
 
-                    {/* Metadata Row */}
-                    <div className="flex items-center gap-3 text-[11px] text-[var(--text-secondary)]">
-                        <div className="flex items-center gap-1.5">
-                            <GitBranch className="w-3 h-3" />
-                            <span className="font-medium">{project.branch}</span>
-                        </div>
-                        <span className="text-[var(--text-tertiary)]">•</span>
-                        <span className="font-mono text-[var(--text-tertiary)]">{commitHash}</span>
-                        <span className="text-[var(--text-tertiary)]">•</span>
-                        <span>{project.lastUpdated}</span>
-                    </div>
+            {/* Branch */}
+            <td className="px-6 py-4">
+                <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                    <GitBranch className="w-3.5 h-3.5" />
+                    <span className="font-mono text-xs">{project.branch}</span>
                 </div>
+            </td>
 
-                {/* Right Side Actions */}
-                <div className="flex items-center gap-2">
-                    <span className={cn("text-xs font-semibold px-2.5 py-1.5 rounded-md", getLanguageColor(project.language))}>
-                        {project.language}
-                    </span>
+            {/* Language */}
+            <td className="px-6 py-4">
+                <span className={cn("text-xs font-medium", getLanguageColor(project.language))}>
+                    {project.language}
+                </span>
+            </td>
+
+            {/* Last Updated */}
+            <td className="px-6 py-4">
+                <span className="text-xs text-[var(--text-secondary)]">{project.lastUpdated}</span>
+            </td>
+
+            {/* Actions */}
+            <td className="px-6 py-4 text-right">
+                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                        onClick={handleAiClick}
+                        className="p-1.5 bg-violet-500/10 hover:bg-violet-500/20 text-violet-600 dark:text-violet-400 rounded-md transition-colors"
+                        title="Ask AI"
+                    >
+                        <Sparkles className="w-3.5 h-3.5" />
+                    </button>
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
                             onClick();
                         }}
-                        className="px-4 py-1.5 bg-[var(--bg-canvas)] hover:bg-white dark:hover:bg-zinc-800 border border-[var(--border-default)] text-[var(--text-primary)] text-xs font-semibold rounded-md transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-sm hover:shadow"
+                        className="px-3 py-1.5 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 hover:border-orange-500/50 text-gray-700 dark:text-gray-200 text-xs font-medium rounded-md shadow-sm transition-colors"
                     >
                         Launch
                     </button>
-                    <button className="p-2 hover:bg-[var(--bg-canvas)] rounded-md transition-all duration-200 opacity-0 group-hover:opacity-100">
-                        <Settings className="w-4 h-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors" />
+                    <button className="p-1.5 hover:bg-[var(--bg-canvas)] rounded-md transition-colors">
+                        <Settings className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
                     </button>
                 </div>
-            </div>
-        </div>
+            </td>
+        </tr>
     );
 }

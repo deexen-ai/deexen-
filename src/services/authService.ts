@@ -13,6 +13,10 @@ export interface User {
     projectCount?: number;
     role?: string;
     onboardingCompleted?: boolean;
+    skillLevel?: 'beginner' | 'intermediate' | 'advanced';
+    bio?: string;
+    location?: string;
+    website?: string;
 }
 
 

@@ -2,8 +2,15 @@
 
 :root {
   /* Deexen Brand Colors - Light Theme */
-  --color-primary: #7c3aed;
-  --color-primary-hover: #6d28d9;
+  /* Deexen Brand Colors - Light Theme */
+  --color-primary: #ea580c;
+  /* Orange-600 */
+  --color-primary-hover: #c2410c;
+  /* Orange-700 */
+  --color-accent: #7c3aed;
+  /* Violet-600 */
+  --color-accent-hover: #6d28d9;
+  /* Violet-700 */
 
   /* Light Theme Palette */
   --bg-canvas: #f9fafb;
@@ -122,4 +129,103 @@ body {
 
 .font-display {
   font-family: 'Instrument Serif', serif;
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass-panel {
+  background: rgba(24, 24, 27, 0.6);
+  /* Zinc-900 with opacity */
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Premium Gradients */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, var(--color-primary) 0%, #f97316 100%);
+}
+
+.bg-gradient-brand {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+}
+
+/* Driver.js Custom Theme */
+.driver-popover.deexen-tour-popover {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  max-width: 300px;
+}
+
+.driver-popover.deexen-tour-popover .driver-popover-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.driver-popover.deexen-tour-popover .driver-popover-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.driver-popover.deexen-tour-popover button.driver-popover-btn {
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+  text-shadow: none;
+}
+
+.driver-popover.deexen-tour-popover button.driver-popover-btn:hover {
+  background-color: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.driver-popover.deexen-tour-popover button.driver-popover-next-btn {
+  background-color: var(--color-primary);
+  color: white;
+  /* Always white on primary */
+  border: none;
+}
+
+.driver-popover.deexen-tour-popover button.driver-popover-next-btn:hover {
+  background-color: var(--color-primary-hover);
+  color: white;
+}
+
+.driver-popover.deexen-tour-popover .driver-popover-progress-text {
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.driver-popover.deexen-tour-popover .driver-popover-arrow-side-left.driver-popover-arrow {
+  border-left-color: var(--bg-surface);
+}
+
+.driver-popover.deexen-tour-popover .driver-popover-arrow-side-right.driver-popover-arrow {
+  border-right-color: var(--bg-surface);
+}
+
+.driver-popover.deexen-tour-popover .driver-popover-arrow-side-top.driver-popover-arrow {
+  border-top-color: var(--bg-surface);
+}
+
+.driver-popover.deexen-tour-popover .driver-popover-arrow-side-bottom.driver-popover-arrow {
+  border-bottom-color: var(--bg-surface);
 }

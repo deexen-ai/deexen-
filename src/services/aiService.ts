@@ -57,7 +57,7 @@ class AIService {
     // MOCK IMPLEMENTATIONS
     // ==========================================
 
-    async mockAnalyze(mode: AIMode, _code: string): Promise<string> {
+    async mockAnalyze(mode: AIMode, _code: string, skillLevel: string = 'intermediate'): Promise<string> {
         await this.simulateDelay(1500);
 
         const mockResponses: Record<AIMode, string> = {
@@ -190,7 +190,10 @@ if (result.success) {
 Keep coding - I'll notify you of any issues!`,
         };
 
-        return mockResponses[mode];
+        const validLevel = ['beginner', 'intermediate', 'advanced'].includes(skillLevel) ? skillLevel : 'intermediate';
+        const levelBadge = `\n\n---\n*Personalized for **${validLevel.charAt(0).toUpperCase() + validLevel.slice(1)}** level*`;
+
+        return mockResponses[mode] + levelBadge;
     }
 
     private simulateDelay(ms: number = 1000): Promise<void> {
