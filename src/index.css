@@ -2,31 +2,38 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* Deexen Brand Colors - Light Theme based on Screenshot */
+  /* Deexen Brand Colors - Light Theme */
   --color-primary: #7c3aed;
   --color-primary-hover: #6d28d9;
 
-  /* VS Code Light Theme Palette */
-  --bg-canvas: #ffffff;
-  --bg-surface: #f3f4f6;
-  /* Sidebar/Panel background */
-  --bg-surface-hover: #e5e7eb;
-  --border-default: #9ca3af;
-  /* Gray-400 */
-  --border-muted: #d1d5db;
-  /* Gray-300 */
+  /* Light Theme Palette */
+  --bg-canvas: #f9fafb;
+  /* Gray-50 */
+  --bg-surface: #ffffff;
+  /* White for cards/panels */
+  --bg-surface-hover: #f3f4f6;
+  /* Gray-100 */
+  --border-default: #e5e7eb;
+  /* Gray-200 */
+  --border-muted: #f3f4f6;
+  /* Gray-100 */
 
-  --text-primary: #000000;
-  /* Black */
-  --text-secondary: #1f2937;
-  /* Gray-800 */
+  --text-primary: #111827;
+  /* Gray-900 */
+  --text-secondary: #6b7280;
+  /* Gray-500 */
+  --text-tertiary: #9ca3af;
+  /* Gray-400 */
   --text-link: #3b82f6;
 
   /* Activity Bar */
-  --bg-activity-bar: #f8f9fa;
-  /* Very light gray */
-
+  --bg-activity-bar: #ffffff;
   --code-bg: #ffffff;
+
+  /* Additional light mode colors */
+  --bg-main: #f9fafb;
+  --bg-sidebar: #ffffff;
+  --border-sidebar: #e5e7eb;
 }
 
 
@@ -34,18 +41,31 @@
 
 
 .dark {
-  /* Dark Theme */
-  --bg-canvas: #0a0a0a;
-  --bg-surface: #141414;
-  --bg-surface-hover: #1f1f1f;
-  --border-default: #262626;
-  --border-muted: #1f1f1f;
+  /* Premium Dark Theme */
+  --bg-canvas: #09090b;
+  /* Zinc-950 */
+  --bg-surface: #18181b;
+  /* Zinc-900 */
+  --bg-surface-hover: #27272a;
+  /* Zinc-800 */
+  --border-default: rgba(255, 255, 255, 0.08);
+  /* Subtle white border */
+  --border-muted: rgba(255, 255, 255, 0.05);
 
-  --text-primary: #ffffff;
-  --text-secondary: #a3a3a3;
+  --text-primary: #f4f4f5;
+  /* Zinc-100 */
+  --text-secondary: #a1a1aa;
+  /* Zinc-400 */
+  --text-tertiary: #71717a;
+  /* Zinc-500 */
 
-  --bg-activity-bar: #000000;
-  --code-bg: #111111;
+  --bg-activity-bar: #09090b;
+  --code-bg: #09090b;
+
+  /* Additional dark mode colors */
+  --bg-main: #09090b;
+  --bg-sidebar: #09090b;
+  --border-sidebar: rgba(255, 255, 255, 0.05);
 }
 
 body {
@@ -56,24 +76,49 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom Scrollbar - Light */
-::-webkit-scrollbar {
+/* Custom Scrollbar - Light Mode */
+:root ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 
-::-webkit-scrollbar-track {
+:root ::-webkit-scrollbar-track {
   background-color: transparent;
 }
 
-::-webkit-scrollbar-thumb {
+:root ::-webkit-scrollbar-thumb {
   background-color: #d1d5db;
+  /* Gray-300 */
   border-radius: 9999px;
-  border: 2px solid white;
+  border: 2px solid #ffffff;
 }
 
-::-webkit-scrollbar-thumb:hover {
+:root ::-webkit-scrollbar-thumb:hover {
   background-color: #9ca3af;
+  /* Gray-400 */
+}
+
+/* Custom Scrollbar - Dark Mode */
+.dark ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #27272a;
+  /* Zinc-800 */
+  border-radius: 9999px;
+  border: 2px solid #09090b;
+  /* Zinc-950 */
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: #3f3f46;
+  /* Zinc-700 */
 }
 
 .font-display {

@@ -86,7 +86,7 @@ export default function SignupPage() {
 
         try {
             await register(name, email, password);
-            navigate('/dashboard');
+            navigate('/onboarding'); // Fix: Redirect to onboarding instead of dashboard
         } catch {
             setFormError('Failed to create account. Please try again.');
         } finally {

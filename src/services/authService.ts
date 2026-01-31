@@ -89,11 +89,15 @@ class AuthService {
             throw { message: 'Password must be at least 6 characters', code: 'INVALID_PASSWORD' };
         }
 
+        // Extract name from email (part before @)
+        const emailPrefix = email.split('@')[0];
+        const displayName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+
         const user: User = {
             id: '1',
-            name: 'Demo User',
+            name: displayName,
             email: email,
-            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(email)}&background=ea580c&color=fff`,
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=ea580c&color=fff`,
             joinDate: 'Jan 2026',
             lastActive: 'Just now',
             projectCount: 12,
@@ -120,7 +124,7 @@ class AuthService {
             joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
             lastActive: 'Just now',
             projectCount: 0,
-            onboardingCompleted: false, // User must go through onboarding
+            onboardingCompleted: false, // New users must complete onboarding
         };
 
         const token = 'mock-jwt-token-' + Math.random().toString(36).substring(2);
