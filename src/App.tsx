@@ -9,6 +9,7 @@ import SettingsPage from '@/pages/SettingsPage';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useThemeStore } from '@/stores/useThemeStore';
 
+import ProjectsPage from '@/pages/ProjectsPage';
 import WorkspacePage from '@/pages/WorkspacePage';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -19,10 +20,10 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Redirect to onboarding if not completed (and allow for optional chaining in case user struct is partial)
-  // if (!user?.onboardingCompleted) {
-  //   return <Navigate to="/onboarding" replace />;
-  // }
+  // Redirect to onboarding if not completed
+  if (user && !user.onboardingCompleted) {
+    return <Navigate to="/onboarding" replace />;
+  }
 
   return children;
 }
@@ -76,6 +77,14 @@ function App() {
           element={
             <ProtectedRoute>
               <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects"
+          element={
+            <ProtectedRoute>
+              <ProjectsPage />
             </ProtectedRoute>
           }
         />
