@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { FileCode, Search, GitBranch, Settings, Sparkles, ArrowLeft } from 'lucide-react';
+import { FileCode, Search, GitBranch, Settings, Sparkles, ArrowLeft, Puzzle, Blocks } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/utils/cn';
+
 import { useFileStore, getFileBreadcrumbs } from '@/stores/useFileStore';
+import { useLayoutStore } from '@/stores/useLayoutStore';
 import FileExplorer from '@/components/file-explorer/FileExplorer';
 import CodeEditor from '@/components/editor/CodeEditor';
 import Terminal from '@/components/terminal/Terminal';
@@ -14,7 +16,7 @@ const ActivityBar = ({ activeView, setActiveView }: { activeView: string, setAct
         { id: 'explorer', icon: FileCode, label: 'Explorer' },
         { id: 'search', icon: Search, label: 'Search' },
         { id: 'git', icon: GitBranch, label: 'Source Control' },
-        { id: 'ai', icon: Sparkles, label: 'AI Assistant' },
+        { id: 'extensions', icon: Puzzle, label: 'Extensions' },
     ];
 
     return (
@@ -57,16 +59,13 @@ export default function WorkspacePage() {
     const [rightPanelWidth, setRightPanelWidth] = useState(320);
     const [terminalHeight, setTerminalHeight] = useState(200);
     const [isDragging, setIsDragging] = useState<'left' | 'right' | 'terminal' | null>(null);
-    const [showRightPanel, setShowRightPanel] = useState(true);
+
+    const { isSidebarOpen, isTerminalOpen, isAIPanelOpen, toggleSidebar, toggleTerminal, toggleAIPanel } = useLayoutStore();
 
     const { files, activeFileId, projectName } = useFileStore();
     const activeFilePath = activeFileId ? getFileBreadcrumbs(files, activeFileId) : '';
 
-    useEffect(() => {
-        if (activeSidebarView === 'ai') {
-            setShowRightPanel(true);
-        }
-    }, [activeSidebarView]);
+
 
     // ... existing resize logic ...
 
@@ -84,7 +83,7 @@ export default function WorkspacePage() {
                 if (newWidth > 150 && newWidth < 400) setLeftPanelWidth(newWidth);
             } else if (isDragging === 'right') {
                 const newWidth = window.innerWidth - e.clientX;
-                if (newWidth > 200 && newWidth < 500) setRightPanelWidth(newWidth);
+                if (newWidth > 300 && newWidth < 500) setRightPanelWidth(newWidth);
             } else if (isDragging === 'terminal') {
                 const newHeight = window.innerHeight - e.clientY - 22;
                 if (newHeight > 100 && newHeight < window.innerHeight - 200) setTerminalHeight(newHeight);
@@ -124,6 +123,58 @@ export default function WorkspacePage() {
                         </>
                     )}
                 </div>
+
+                {/* Layout Controls - Right Aligned */}
+                <div className="flex items-center space-x-1">
+                    <button
+                        onClick={toggleSidebar}
+                        title="Toggle Sidebar"
+                        className={cn(
+                            "p-1 rounded-[2px] hover:bg-[var(--bg-surface-hover)] transition-colors",
+                            isSidebarOpen ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)] opacity-70 hover:opacity-100"
+                        )}
+                    >
+                        <div className="w-3.5 h-3.5 border border-current rounded-[2px] relative">
+                            {isSidebarOpen ? (
+                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-current" />
+                            ) : (
+                                <div className="absolute left-[3px] top-0 bottom-0 w-[1px] bg-current" />
+                            )}
+                        </div>
+                    </button>
+                    <button
+                        onClick={toggleTerminal}
+                        title="Toggle Terminal"
+                        className={cn(
+                            "p-1 rounded-[2px] hover:bg-[var(--bg-surface-hover)] transition-colors",
+                            isTerminalOpen ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)] opacity-70 hover:opacity-100"
+                        )}
+                    >
+                        <div className="w-3.5 h-3.5 border border-current rounded-[2px] relative">
+                            {isTerminalOpen ? (
+                                <div className="absolute left-0 right-0 bottom-0 h-1 bg-current" />
+                            ) : (
+                                <div className="absolute left-0 right-0 bottom-[3px] h-[1px] bg-current" />
+                            )}
+                        </div>
+                    </button>
+                    <button
+                        onClick={toggleAIPanel}
+                        title="Toggle AI Panel"
+                        className={cn(
+                            "p-1 rounded-[2px] hover:bg-[var(--bg-surface-hover)] transition-colors",
+                            isAIPanelOpen ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)] opacity-70 hover:opacity-100"
+                        )}
+                    >
+                        <div className="w-3.5 h-3.5 border border-current rounded-[2px] relative">
+                            {isAIPanelOpen ? (
+                                <div className="absolute right-0 top-0 bottom-0 w-1 bg-current" />
+                            ) : (
+                                <div className="absolute right-[3px] top-0 bottom-0 w-[1px] bg-current" />
+                            )}
+                        </div>
+                    </button>
+                </div>
             </div>
 
             {/* Main Layout */}
@@ -132,49 +183,51 @@ export default function WorkspacePage() {
                 <ActivityBar activeView={activeSidebarView} setActiveView={setActiveSidebarView} />
 
                 {/* Left Sidebar */}
-                <div
-                    style={{ width: leftPanelWidth }}
-                    className="flex-shrink-0 flex flex-col bg-[var(--bg-surface)] border-r border-[var(--border-default)] relative"
-                >
-                    {/* Sidebar Header */}
-                    <div className="h-9 flex items-center px-4 text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider border-b border-[var(--border-default)]">
-                        {activeSidebarView === 'explorer' && 'Explorer'}
-                        {activeSidebarView === 'search' && 'Search'}
-                        {activeSidebarView === 'git' && 'Source Control'}
-                        {activeSidebarView === 'ai' && 'AI Assistant'}
-                    </div>
-
-                    {/* Sidebar Content */}
-                    <div className="flex-1 overflow-auto">
-                        {activeSidebarView === 'explorer' && <FileExplorer />}
-                        {activeSidebarView === 'search' && (
-                            <div className="p-3">
-                                <input
-                                    className="w-full h-8 px-3 bg-[var(--bg-surface-hover)] border border-[var(--border-default)] rounded text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-orange-500"
-                                    placeholder="Search..."
-                                />
-                            </div>
-                        )}
-                        {activeSidebarView === 'git' && (
-                            <div className="p-4 text-sm text-[var(--text-secondary)] flex flex-col items-center justify-center h-full">
-                                <GitBranch className="w-8 h-8 mb-2 opacity-30" />
-                                <span>No changes</span>
-                            </div>
-                        )}
-                        {activeSidebarView === 'ai' && (
-                            <div className="p-4 text-sm text-[var(--text-secondary)] flex flex-col items-center justify-center h-full">
-                                <Sparkles className="w-8 h-8 mb-2 opacity-30" />
-                                <span>AI panel on right →</span>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Resize Handle */}
+                {isSidebarOpen && (
                     <div
-                        className="absolute top-0 bottom-0 right-0 w-1 cursor-col-resize hover:bg-orange-500/50 transition-colors"
-                        onMouseDown={startResize('left')}
-                    />
-                </div>
+                        style={{ width: leftPanelWidth }}
+                        className="flex-shrink-0 flex flex-col bg-[var(--bg-surface)] border-r border-[var(--border-default)] relative"
+                    >
+                        {/* Sidebar Header */}
+                        <div className="h-9 flex items-center px-4 text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider border-b border-[var(--border-default)]">
+                            {activeSidebarView === 'explorer' && 'Explorer'}
+                            {activeSidebarView === 'search' && 'Search'}
+                            {activeSidebarView === 'git' && 'Source Control'}
+                            {activeSidebarView === 'extensions' && 'Extensions'}
+                        </div>
+
+                        {/* Sidebar Content */}
+                        <div className="flex-1 overflow-auto">
+                            {activeSidebarView === 'explorer' && <FileExplorer />}
+                            {activeSidebarView === 'search' && (
+                                <div className="p-3">
+                                    <input
+                                        className="w-full h-8 px-3 bg-[var(--bg-surface-hover)] border border-[var(--border-default)] rounded text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-orange-500"
+                                        placeholder="Search..."
+                                    />
+                                </div>
+                            )}
+                            {activeSidebarView === 'git' && (
+                                <div className="p-4 text-sm text-[var(--text-secondary)] flex flex-col items-center justify-center h-full">
+                                    <GitBranch className="w-8 h-8 mb-2 opacity-30" />
+                                    <span>No changes</span>
+                                </div>
+                            )}
+                            {activeSidebarView === 'extensions' && (
+                                <div className="p-4 text-sm text-[var(--text-secondary)] flex flex-col items-center justify-center h-full">
+                                    <Blocks className="w-8 h-8 mb-2 opacity-30" />
+                                    <span>Marketplace coming soon</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Resize Handle */}
+                        <div
+                            className="absolute top-0 bottom-0 right-0 w-1 cursor-col-resize hover:bg-orange-500/50 transition-colors"
+                            onMouseDown={startResize('left')}
+                        />
+                    </div>
+                )}
 
                 {/* Center Area */}
                 <div className="flex-1 flex flex-col min-w-0">
@@ -184,19 +237,23 @@ export default function WorkspacePage() {
                     </div>
 
                     {/* Terminal Resize Handle */}
-                    <div
-                        className="h-1 bg-[var(--bg-surface)] cursor-row-resize hover:bg-orange-500/50 transition-colors"
-                        onMouseDown={startResize('terminal')}
-                    />
+                    {isTerminalOpen && (
+                        <div
+                            className="h-1 bg-[var(--bg-surface)] cursor-row-resize hover:bg-orange-500/50 transition-colors"
+                            onMouseDown={startResize('terminal')}
+                        />
+                    )}
 
                     {/* Terminal */}
-                    <div style={{ height: terminalHeight }} className="flex-shrink-0 bg-[var(--bg-canvas)] border-t border-[var(--border-default)]">
-                        <Terminal />
-                    </div>
+                    {isTerminalOpen && (
+                        <div style={{ height: terminalHeight }} className="flex-shrink-0 bg-[var(--bg-canvas)] border-t border-[var(--border-default)]">
+                            <Terminal />
+                        </div>
+                    )}
                 </div>
 
                 {/* Right Panel (AI) */}
-                {showRightPanel && (
+                {isAIPanelOpen && (
                     <>
                         <div
                             className="w-1 bg-[var(--bg-surface)] cursor-col-resize hover:bg-orange-500/50 transition-colors flex-shrink-0"
