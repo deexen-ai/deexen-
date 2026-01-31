@@ -1,201 +1,258 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    FolderOpen, Plus,
-    Search, Star, MoreHorizontal,
-    ExternalLink, Sparkles, LayoutTemplate, Github
+    Plus, Search, Terminal,
+    GitBranch, Activity, AlertCircle, Settings
 } from 'lucide-react';
-
 import { cn } from '@/utils/cn';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { useAIStore } from '@/stores/useAIStore';
 import { useFileStore } from '@/stores/useFileStore';
-import { useProjectStore } from '@/stores/useProjectStore';
-import { useToastStore } from '@/stores/useToastStore';
-
-import CreateProjectModal from '@/components/dashboard/CreateProjectModal';
-
-import Header from '@/components/layout/Header';
+import { projects } from '@/data/projects';
+import Sidebar from '@/components/layout/Sidebar';
 import AiAssistant from '@/components/AiAssistant/AiAssistant';
 
 export default function DashboardPage() {
     const navigate = useNavigate();
     const { user } = useAuthStore();
-    const { setChatOpen, setTriggerMessage } = useAIStore();
     const { setProjectName } = useFileStore();
-    const { projects } = useProjectStore();
     const [searchQuery, setSearchQuery] = useState('');
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+                event.preventDefault();
+                searchInputRef.current?.focus();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
 
     const handleOpenWorkspace = (name: string) => {
         setProjectName(name);
         navigate('/workspace');
     };
 
-    const handleExplainProject = (projectName: string, e: React.MouseEvent) => {
-        e.stopPropagation(); // Prevent opening workspace
-        setTriggerMessage(`Explain ${projectName}`);
-        setChatOpen(true);
-        // We rely on AiAssistant to detect the open state change or trigger change
-    };
-
     if (!user) return null;
 
     const filteredProjects = projects.filter(p =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.description.toLowerCase().includes(searchQuery.toLowerCase())
+        p.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
-        <div className="min-h-screen w-full bg-[var(--bg-canvas)] font-sans text-[var(--text-primary)] transition-colors duration-200">
-            <Header />
+        <div className="flex h-screen w-full bg-[var(--bg-main)] font-sans text-[var(--text-primary)] overflow-hidden">
+            {/* 1. Sidebar */}
+            <Sidebar />
 
-            {/* Main */}
-            <div className="max-w-4xl mx-auto py-8 px-6">
-                {/* Title */}
-                <div className="mb-6">
-                    <h1 className="text-lg font-medium">Projects</h1>
-                    <p className="text-sm text-[var(--text-secondary)]">Select a project to open in the editor</p>
-                </div>
+            {/* 2. Main Canvas */}
+            <main className="flex-1 ml-64 h-full overflow-y-auto overflow-x-hidden relative">
 
-                {/* Actions Section */}
-                <div className="flex flex-col items-center justify-center mb-8 space-y-4">
-                    {/* Search Bar - Moved to top right or kept separate? 
-                        User asked to move new project button to middle.
-                        Let's put search bar on top left? Or just separate div.
-                        Let's keep search on the left of the listing for now, or separate row.
-                        Actually, putting search in the list header might be cleaner if we have a big hero section.
-                        For now, I'll separate the Search and the Create Actions.
-                    */}
-
-                    {/* Main Create Button */}
-                    <button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        className="flex items-center space-x-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-base font-medium rounded-md transition-all transform hover:scale-101 shadow-lg shadow-orange-500/20"
-                    >
-                        <Plus className="w-5 h-5" />
-                        <span>New Project</span>
-                    </button>
-
-                    {/* Secondary Actions */}
-                    <div className="flex items-center space-x-4">
-                        <button
-                            onClick={() => useToastStore.getState().addToast("Start with a template feature will come in desktop IDE", 'info')}
-                            className="flex items-center space-x-2 px-4 py-2 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-default)] rounded-md text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-                        >
-                            <LayoutTemplate className="w-4 h-4" />
-                            <span>Start with a template</span>
-                        </button>
-                        <button
-                            onClick={() => useToastStore.getState().addToast("Clone from GitHub feature will come in desktop IDE", 'info')}
-                            className="flex items-center space-x-2 px-4 py-2 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-default)] rounded-md text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-                        >
-                            <Github className="w-4 h-4" />
-                            <span>Clone from GitHub</span>
-                        </button>
-                    </div>
-                </div>
-
-                {/* Search & List Actions */}
-                <div className="flex items-center justify-between mb-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
-                        <input
-                            type="text"
-                            placeholder="Search projects..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-64 h-8 pl-9 pr-3 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-neutral-500 transition-colors"
-                        />
-                    </div>
-                    {/* Filter or Sort could go here */}
-                </div>
-
-                {/* Projects List */}
-                <div className="border border-[var(--border-default)] rounded overflow-hidden">
-                    {/* Header */}
-                    <div className="h-9 bg-[var(--bg-surface)] border-b border-[var(--border-default)] flex items-center px-4 text-xs text-[var(--text-secondary)]">
-                        <div className="flex-1">Name</div>
-                        <div className="w-24 text-center">Files</div>
-                        <div className="w-24 text-center">Updated</div>
-                        <div className="w-28 pl-4">Actions</div>
+                {/* Sticky Header */}
+                <header className="sticky top-0 z-40 w-full h-16 bg-[var(--bg-main)]/80 backdrop-blur-md border-b border-[var(--border-default)] flex items-center justify-between px-8">
+                    {/* Breadcrumbs */}
+                    <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                        <span className="hover:text-[var(--text-primary)] cursor-pointer transition-colors">deexen</span>
+                        <span className="text-[var(--text-tertiary)]">/</span>
+                        <span className="text-[var(--text-primary)] font-medium cursor-pointer">dashboard</span>
                     </div>
 
-                    {/* Rows */}
-                    {filteredProjects.map((project, i) => (
-                        <div
-                            key={project.id}
-                            onClick={() => handleOpenWorkspace(project.name)}
-                            className={cn(
-                                "h-14 flex items-center px-4 cursor-pointer transition-colors group",
-                                "hover:bg-[var(--bg-surface-hover)]",
-                                i !== filteredProjects.length - 1 && "border-b border-[var(--border-default)]"
-                            )}
-                        >
-                            <div className="flex-1 flex items-center space-x-3 min-w-0">
-                                <div className="w-8 h-8 bg-[var(--bg-surface-hover)] rounded-sm flex items-center justify-center flex-shrink-0">
-                                    <FolderOpen className="w-4 h-4 text-[var(--text-secondary)]" />
-                                </div>
-                                <div className="min-w-0">
-                                    <div className="flex items-center space-x-2">
-                                        <span className="text-sm font-medium text-[var(--text-primary)] truncate">{project.name}</span>
-                                        {project.starred && (
-                                            <Star className="w-3 h-3 text-orange-500 fill-orange-500 flex-shrink-0" />
-                                        )}
-                                        <span className="text-xs px-1.5 py-0.5 bg-[var(--bg-surface)] text-[var(--text-secondary)] rounded flex-shrink-0">
-                                            {project.language}
-                                        </span>
-                                    </div>
-                                    <p className="text-xs text-[var(--text-secondary)] truncate">{project.description}</p>
-                                </div>
-                            </div>
-                            <div className="w-24 text-center text-sm text-[var(--text-secondary)]">
-                                {project.files}
-                            </div>
-                            <div className="w-24 text-center text-sm text-[var(--text-secondary)]">
-                                {project.lastModified}
-                            </div>
-                            <div className="w-28 flex items-center justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
-                                    onClick={(e) => handleExplainProject(project.name, e)}
-                                    title="Explain Project with AI"
-                                    className="p-1.5 text-[var(--text-secondary)] hover:text-violet-400 hover:bg-[var(--bg-surface-hover)] rounded transition-colors"
-                                >
-                                    <Sparkles className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); }}
-                                    className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] rounded transition-colors"
-                                >
-                                    <ExternalLink className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); }}
-                                    className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] rounded transition-colors"
-                                >
-                                    <MoreHorizontal className="w-3.5 h-3.5" />
-                                </button>
+                    {/* Actions */}
+                    <div className="flex items-center gap-4">
+                        <div className="relative group">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] group-focus-within:text-[var(--text-secondary)] transition-colors" />
+                            <input
+                                type="text"
+                                placeholder="Search..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                ref={searchInputRef}
+                                className="w-64 h-9 pl-9 pr-3 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-md text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all font-mono"
+                            />
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none">
+                                <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-[var(--border-default)] bg-[var(--bg-canvas)] px-1.5 font-mono text-[10px] font-medium text-[var(--text-tertiary)]">
+                                    <span className="text-xs">⌘</span>K
+                                </kbd>
                             </div>
                         </div>
-                    ))}
+                        <button className="h-9 px-4 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-md transition-colors flex items-center gap-2 shadow-sm">
+                            <Plus className="w-4 h-4" />
+                            New Project
+                        </button>
+                    </div>
+                </header>
 
-                    {filteredProjects.length === 0 && (
-                        <div className="h-32 flex items-center justify-center text-sm text-[var(--text-secondary)]">
-                            No projects found
+                {/* Main Content Area */}
+                <div className="flex-1 overflow-y-auto">
+                    <div className="p-8 max-w-6xl mx-auto space-y-8">
+
+                        {/* Metric Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <MetricCard
+                                title="Total Projects"
+                                value={filteredProjects.length.toString()}
+                                icon={Terminal}
+                                trend="+2 this week"
+                            />
+                            <MetricCard
+                                title="System Status"
+                                value="Healthy"
+                                icon={Activity}
+                                valueColor="text-green-400"
+                                trend="99.9% uptime"
+                            />
+                            <MetricCard
+                                title="Active Alerts"
+                                value="0"
+                                icon={AlertCircle}
+                                trend="All systems normal"
+                            />
                         </div>
-                    )}
-                </div>
 
-                {/* Footer info */}
-                <div className="mt-4 flex items-center justify-between text-xs text-[var(--text-secondary)]">
-                    <span>{filteredProjects.length} {filteredProjects.length === 1 ? 'project' : 'projects'}</span>
+                        {/* Recent Projects Section */}
+                        <div>
+                            <div className="flex items-center justify-between mb-5">
+                                <h3 className="text-base font-medium text-[var(--text-primary)]">Recent Projects</h3>
+                                <button
+                                    onClick={() => navigate('/projects')}
+                                    className="text-sm text-orange-600 dark:text-orange-500 hover:text-orange-700 dark:hover:text-orange-400 font-medium flex items-center gap-1 transition-colors group"
+                                >
+                                    View All
+                                </button>
+                            </div>
+                            <div className="grid gap-3">
+                                {filteredProjects.map((project) => (
+                                    <ProjectCard
+                                        key={project.id}
+                                        project={project}
+                                        onClick={() => handleOpenWorkspace(project.name)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <AiAssistant />
+        </div>
+    );
+}
+
+// Metric Card Component
+interface MetricCardProps {
+    title: string;
+    value: string;
+    icon: React.ElementType;
+    trend: string;
+    valueColor?: string;
+}
+
+function MetricCard({ title, value, icon: Icon, trend, valueColor = 'text-[var(--text-primary)]' }: MetricCardProps) {
+    return (
+        <div className="bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-default)] rounded-lg p-5 transition-colors group cursor-pointer">
+            <div className="flex items-start justify-between">
+                <div className="flex-1">
+                    <p className="text-[var(--text-secondary)] text-xs font-medium uppercase tracking-wide mb-2">
+                        {title}
+                    </p>
+                    <p className={cn("text-2xl font-semibold mb-1", valueColor)}>
+                        {value}
+                    </p>
+                    <p className="text-[var(--text-secondary)] text-xs">
+                        {trend}
+                    </p>
+                </div>
+                <div className="p-2.5 bg-[var(--bg-canvas)] rounded-lg">
+                    <Icon className="w-5 h-5 text-[var(--text-tertiary)]" />
                 </div>
             </div>
-            <CreateProjectModal
-                isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
-            />
-            <AiAssistant />
+        </div>
+    );
+}
+
+// Project Card Component
+interface ProjectCardProps {
+    project: any;
+    onClick: () => void;
+}
+
+function ProjectCard({ project, onClick }: ProjectCardProps) {
+    // Generate a mock commit hash
+    const commitHash = Math.random().toString(36).substring(2, 9);
+
+    const getLanguageColor = (lang: string) => {
+        const colors: Record<string, string> = {
+            TypeScript: 'text-blue-500 bg-blue-500/10',
+            Python: 'text-yellow-500 bg-yellow-500/10',
+            React: 'text-cyan-500 bg-cyan-500/10',
+            Go: 'text-teal-500 bg-teal-500/10',
+        };
+        return colors[lang] || 'text-gray-500 bg-gray-500/10';
+    };
+
+    return (
+        <div className="bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-default)] hover:border-[var(--border-default)]/80 rounded-lg px-5 py-4 transition-all duration-200 group shadow-sm hover:shadow-md">
+            <div className="flex items-center gap-4">
+                {/* Project Icon */}
+                <div className="w-11 h-11 rounded-lg bg-[#2d3748] dark:bg-[#27272a] flex items-center justify-center flex-shrink-0 shadow-sm border border-[var(--border-default)]">
+                    <span className="text-lg font-bold text-gray-400 dark:text-gray-500">
+                        {project.name.charAt(0).toUpperCase()}
+                    </span>
+                </div>
+
+                {/* Project Info */}
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                        <h4
+                            onClick={onClick}
+                            className="text-sm font-semibold text-[var(--text-primary)] hover:text-orange-600 dark:hover:text-orange-500 transition-colors cursor-pointer"
+                        >
+                            {project.name}
+                        </h4>
+                        {project.status === 'Production' && (
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-500/10">
+                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-[10px] font-medium text-green-600 dark:text-green-400 uppercase tracking-wide">Production</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Metadata Row */}
+                    <div className="flex items-center gap-3 text-[11px] text-[var(--text-secondary)]">
+                        <div className="flex items-center gap-1.5">
+                            <GitBranch className="w-3 h-3" />
+                            <span className="font-medium">{project.branch}</span>
+                        </div>
+                        <span className="text-[var(--text-tertiary)]">•</span>
+                        <span className="font-mono text-[var(--text-tertiary)]">{commitHash}</span>
+                        <span className="text-[var(--text-tertiary)]">•</span>
+                        <span>{project.lastUpdated}</span>
+                    </div>
+                </div>
+
+                {/* Right Side Actions */}
+                <div className="flex items-center gap-2">
+                    <span className={cn("text-xs font-semibold px-2.5 py-1.5 rounded-md", getLanguageColor(project.language))}>
+                        {project.language}
+                    </span>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onClick();
+                        }}
+                        className="px-4 py-1.5 bg-[var(--bg-canvas)] hover:bg-white dark:hover:bg-zinc-800 border border-[var(--border-default)] text-[var(--text-primary)] text-xs font-semibold rounded-md transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-sm hover:shadow"
+                    >
+                        Launch
+                    </button>
+                    <button className="p-2 hover:bg-[var(--bg-canvas)] rounded-md transition-all duration-200 opacity-0 group-hover:opacity-100">
+                        <Settings className="w-4 h-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors" />
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }
