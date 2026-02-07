@@ -4,8 +4,8 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useThemeStore } from '@/stores/useThemeStore';
 import { useLayoutStore } from '@/stores/useLayoutStore';
 import {
-    User, Lock, Settings as SettingsIcon, Palette, Shield,
-    Bell, CreditCard, LogOut, Sun, Moon, Search,
+    User, Settings as SettingsIcon, Palette, Shield,
+    Bell, CreditCard, Sun, Moon,
     GraduationCap, Brain, Zap
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
@@ -17,7 +17,7 @@ import AvatarUpload from '@/components/profile/AvatarUpload';
 type SettingsTab = 'profile' | 'account' | 'appearance' | 'notifications' | 'billing';
 
 export default function SettingsPage() {
-    const { user, updateUser, logout } = useAuthStore();
+    const { user, updateUser } = useAuthStore();
     const { theme, setTheme } = useThemeStore();
     const { isSidebarOpen } = useLayoutStore();
     const navigate = useNavigate();

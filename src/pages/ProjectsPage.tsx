@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { useFileStore } from '@/stores/useFileStore';
 import { useLayoutStore } from '@/stores/useLayoutStore';
 import { useThemeStore } from '@/stores/useThemeStore';
 import { useAIStore } from '@/stores/useAIStore';
