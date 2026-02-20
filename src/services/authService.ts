@@ -13,7 +13,13 @@ export interface User {
     projectCount?: number;
     role?: string;
     onboardingCompleted?: boolean;
+    skillLevel?: 'beginner' | 'intermediate' | 'advanced';
+    bio?: string;
+    location?: string;
+    website?: string;
 }
+
+
 
 interface LoginResponse {
     user: User;
@@ -48,8 +54,7 @@ class AuthService {
     }
 
     async logout(): Promise<void> {
-        const token = localStorage.getItem('deexen_token');
-        if (token && !apiClient.isMockMode()) {
+        if (!apiClient.isMockMode()) {
             try {
                 await apiClient.post('/auth/logout');
             } catch {
@@ -74,7 +79,7 @@ class AuthService {
             return this.mockUpdateProfile(data);
         }
 
-        return apiClient.put<User>('/auth/profile', data);
+        return apiClient.put<User>('/auth/me', data);
     }
 
     // ==========================================
@@ -88,11 +93,15 @@ class AuthService {
             throw { message: 'Password must be at least 6 characters', code: 'INVALID_PASSWORD' };
         }
 
+        // Extract name from email (part before @)
+        const emailPrefix = email.split('@')[0];
+        const displayName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+
         const user: User = {
             id: '1',
-            name: 'Demo User',
+            name: displayName,
             email: email,
-            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(email)}&background=ea580c&color=fff`,
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=ea580c&color=fff`,
             joinDate: 'Jan 2026',
             lastActive: 'Just now',
             projectCount: 12,
@@ -119,7 +128,7 @@ class AuthService {
             joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
             lastActive: 'Just now',
             projectCount: 0,
-            onboardingCompleted: true,
+            onboardingCompleted: false, // New users must complete onboarding
         };
 
         const token = 'mock-jwt-token-' + Math.random().toString(36).substring(2);

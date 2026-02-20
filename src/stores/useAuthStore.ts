@@ -9,8 +9,8 @@ interface AuthState {
     isLoading: boolean;
     error: string | null;
     login: (email: string, password: string) => Promise<void>;
-    loginWithToken: (token: string) => Promise<void>;
     register: (name: string, email: string, password: string) => Promise<void>;
+    loginWithToken: (token: string) => Promise<void>;
     logout: () => void;
     initialize: () => void;
     clearError: () => void;
@@ -36,10 +36,7 @@ export const useAuthStore = create<AuthState>()(
                 try {
                     const { user, token } = await authService.login(email, password);
 
-                    // Sync for apiClient
-                    localStorage.setItem('deexen_token', token);
-                    localStorage.setItem('deexen_user', JSON.stringify(user));
-
+                    // LocalStorage handled by persist middleware
                     set({
                         user,
                         token,
@@ -55,45 +52,13 @@ export const useAuthStore = create<AuthState>()(
                 }
             },
 
-            loginWithToken: async (token: string) => {
-                set({ isLoading: true, error: null });
-
-                try {
-                    // Sync for apiClient
-                    localStorage.setItem('deexen_token', token);
-
-                    const user = await authService.getProfile();
-
-                    // Sync user
-                    localStorage.setItem('deexen_user', JSON.stringify(user));
-
-                    set({
-                        user,
-                        token,
-                        isAuthenticated: true,
-                        isLoading: false,
-                    });
-                } catch (error: unknown) {
-                    const message = error && typeof error === 'object' && 'message' in error
-                        ? (error as { message: string }).message
-                        : 'Login with token failed';
-
-                    localStorage.removeItem('deexen_token');
-                    set({ error: message, isLoading: false });
-                    throw error;
-                }
-            },
-
             register: async (name, email, password) => {
                 set({ isLoading: true, error: null });
 
                 try {
                     const { user, token } = await authService.register({ name, email, password });
 
-                    // Sync for apiClient
-                    localStorage.setItem('deexen_token', token);
-                    localStorage.setItem('deexen_user', JSON.stringify(user));
-
+                    // LocalStorage handled by persist middleware
                     set({
                         user,
                         token,
@@ -109,6 +74,29 @@ export const useAuthStore = create<AuthState>()(
                 }
             },
 
+            loginWithToken: async (token: string) => {
+                set({ isLoading: true, error: null });
+                try {
+                    // Manually set token in localStorage so authService can read it
+                    localStorage.setItem('deexen_token', token);
+
+                    const user = await authService.getProfile();
+
+                    set({
+                        user,
+                        token,
+                        isAuthenticated: true,
+                        isLoading: false
+                    });
+                } catch (error: unknown) {
+                    const message = error && typeof error === 'object' && 'message' in error
+                        ? (error as { message: string }).message
+                        : 'OAuth login failed';
+                    set({ error: message, isLoading: false });
+                    throw error;
+                }
+            },
+
             logout: () => {
                 authService.logout();
                 set({ user: null, token: null, isAuthenticated: false, error: null });
@@ -118,7 +106,6 @@ export const useAuthStore = create<AuthState>()(
                 set((state) => {
                     if (!state.user) return state;
                     const updatedUser = { ...state.user, ...updates };
-                    localStorage.setItem('deexen_user', JSON.stringify(updatedUser));
                     return { user: updatedUser };
                 });
             },
@@ -126,8 +113,8 @@ export const useAuthStore = create<AuthState>()(
             clearError: () => set({ error: null }),
         }),
         {
-            name: 'deexen-auth-storage',
-            partialize: (state) => ({ token: state.token, user: state.user, isAuthenticated: state.isAuthenticated }),
+            name: 'deexen-auth-storage', // unique name
+            partialize: (state) => ({ token: state.token, user: state.user, isAuthenticated: state.isAuthenticated }), // only persist these fields
         }
     )
 );

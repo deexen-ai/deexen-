@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useThemeStore } from '@/stores/useThemeStore';
 import { Button } from '@/components/ui/Button';
-import { Check, User, Briefcase, Code, Coffee, Globe, Moon, Sun, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Check, User, Briefcase, Code, Coffee, Globe, Moon, Sun, ArrowRight, ArrowLeft, Brain, GraduationCap, Zap, HelpCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useLayoutStore } from '@/stores/useLayoutStore';
 
 // Helper for conditional classes
 function cn(...inputs: (string | undefined | null | false)[]) {
@@ -20,19 +21,58 @@ const ROLES = [
     { id: 'other', label: 'Other', icon: Code, description: 'Something else' }
 ];
 
+const SKILL_LEVELS = [
+    { id: 'beginner', label: 'Beginner', icon: GraduationCap, description: 'I need definitions and simpler explanations.' },
+    { id: 'intermediate', label: 'Intermediate', icon: Brain, description: 'I know the basics, just help me build.' },
+    { id: 'advanced', label: 'Advanced', icon: Zap, description: 'Concise answers. Code snippets only.' },
+    { id: 'quiz', label: 'Take a Quiz', icon: HelpCircle, description: 'Not sure? Let AI decide for you.' }
+];
+
+const QUIZ_QUESTIONS = [
+    {
+        question: "What is the output of `console.log(typeof [])` in JavaScript?",
+        options: ["array", "object", "undefined", "list"],
+        correct: 1 // object
+    },
+    {
+        question: "Which hook is used for side effects in React?",
+        options: ["useState", "useEffect", "useContext", "useReducer"],
+        correct: 1 // useEffect
+    },
+    {
+        question: "What does the 'prop drilling' problem refer to?",
+        options: ["Passing data through too many layers", "Using incorrect prop types", "Drilling holes in components", "Database query optimization"],
+        correct: 0 // Passing data...
+    },
+    {
+        question: "What is the primary purpose of TypeScript?",
+        options: ["To run code faster", "To add static typing to JavaScript", "To replace JavaScript entirely", "To style components"],
+        correct: 1 // To add static typing...
+    },
+    {
+        question: "Which CSS method allows for responsive design?",
+        options: ["Media Queries", "Flexbox", "Grid", "All of the above"],
+        correct: 3 // All of the above
+    }
+];
+
 export default function OnboardingPage() {
     const [step, setStep] = useState(1);
     const [selectedRole, setSelectedRole] = useState('');
+    const [selectedSkillLevel, setSelectedSkillLevel] = useState<'beginner' | 'intermediate' | 'advanced' | ''>('');
+    const [showQuiz, setShowQuiz] = useState(false);
+    const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
+    const [quizScore, setQuizScore] = useState<number | null>(null);
 
-    // Get theme from store
     const { theme, setTheme } = useThemeStore();
     const { updateUser } = useAuthStore();
+    const { resetTours } = useLayoutStore();
 
     const navigate = useNavigate();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleFinish = async () => {
-        if (!selectedRole) return;
+        if (!selectedRole || !selectedSkillLevel) return;
 
         setIsSubmitting(true);
 
@@ -40,8 +80,10 @@ export default function OnboardingPage() {
         setTimeout(() => {
             updateUser({
                 role: selectedRole,
+                skillLevel: selectedSkillLevel as any,
                 onboardingCompleted: true
             });
+            resetTours();
             navigate('/dashboard');
             setIsSubmitting(false);
         }, 800);
@@ -49,10 +91,41 @@ export default function OnboardingPage() {
 
     const nextStep = () => {
         if (step === 1 && selectedRole) setStep(2);
+        else if (step === 2) setStep(3);
     };
 
     const prevStep = () => {
         if (step === 2) setStep(1);
+        else if (step === 3) setStep(2);
+    };
+
+    const handleQuizOptionSelect = (questionIndex: number, optionIndex: number) => {
+        const newAnswers = [...quizAnswers];
+        newAnswers[questionIndex] = optionIndex;
+        setQuizAnswers(newAnswers);
+
+        // Auto-advance or finish
+        if (newAnswers.filter(a => a !== undefined).length === QUIZ_QUESTIONS.length) {
+            // Calculate score
+            let score = 0;
+            newAnswers.forEach((ans, idx) => {
+                if (ans === QUIZ_QUESTIONS[idx].correct) score++;
+            });
+            setQuizScore(score);
+
+            // Assign level based on score
+            // 0-2: Beginner
+            // 3-4: Intermediate
+            // 5: Advanced
+            let level: 'beginner' | 'intermediate' | 'advanced' = 'beginner';
+            if (score >= 3) level = 'intermediate';
+            if (score === 5) level = 'advanced';
+
+            setTimeout(() => {
+                setSelectedSkillLevel(level);
+                setShowQuiz(false);
+            }, 1500); // Show score briefly
+        }
     };
 
     return (
@@ -63,14 +136,19 @@ export default function OnboardingPage() {
                 <div className="mb-8 flex items-center justify-center space-x-2">
                     <div className={cn("h-2 w-12 rounded-full transition-colors", step >= 1 ? "bg-orange-500" : "bg-[var(--border-default)]")} />
                     <div className={cn("h-2 w-12 rounded-full transition-colors", step >= 2 ? "bg-orange-500" : "bg-[var(--border-default)]")} />
+                    <div className={cn("h-2 w-12 rounded-full transition-colors", step >= 3 ? "bg-orange-500" : "bg-[var(--border-default)]")} />
                 </div>
 
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-semibold text-[var(--text-primary)] mb-2">
-                        {step === 1 ? "Tell us about yourself" : "Choose your look"}
+                        {step === 1 && "Tell us about yourself"}
+                        {step === 2 && "Choose your look"}
+                        {step === 3 && "What's your coding experience?"}
                     </h1>
                     <p className="text-[var(--text-secondary)]">
-                        {step === 1 ? "We'll personalize your experience based on your role." : "Select the theme that fits your vibe."}
+                        {step === 1 && "We'll personalize your experience based on your role."}
+                        {step === 2 && "Select the theme that fits your vibe."}
+                        {step === 3 && "Help us tailor the AI assistance to your level."}
                     </p>
                 </div>
 
@@ -179,6 +257,103 @@ export default function OnboardingPage() {
                     </div>
                 )}
 
+                {/* Step 3: Skill Level Selection */}
+                {step === 3 && !showQuiz && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-[fadeIn_0.3s_ease-out]">
+                        {SKILL_LEVELS.map((level) => {
+                            const Icon = level.icon;
+                            const isSelected = selectedSkillLevel === level.id;
+                            const isQuiz = level.id === 'quiz';
+
+                            return (
+                                <button
+                                    key={level.id}
+                                    onClick={() => {
+                                        if (isQuiz) {
+                                            setShowQuiz(true);
+                                            setQuizAnswers([]);
+                                            setQuizScore(null);
+                                        } else {
+                                            setSelectedSkillLevel(level.id as any);
+                                        }
+                                    }}
+                                    className={cn(
+                                        "relative p-4 rounded-xl border-2 text-left transition-all duration-200 group hover:border-orange-500/50 hover:bg-[var(--bg-surface-hover)]",
+                                        isSelected
+                                            ? "border-orange-500 bg-orange-500/5 ring-1 ring-orange-500/20"
+                                            : "border-[var(--border-default)] bg-[var(--bg-surface)]"
+                                    )}
+                                >
+                                    <div className="flex items-start gap-4">
+                                        <div className={cn(
+                                            "p-2 rounded-lg transition-colors",
+                                            isSelected ? "bg-orange-500 text-white" : "bg-[var(--bg-canvas)] text-[var(--text-secondary)] group-hover:text-orange-500"
+                                        )}>
+                                            <Icon className="w-6 h-6" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className={cn("font-medium mb-1", isSelected ? "text-orange-500" : "text-[var(--text-primary)]")}>
+                                                {level.label}
+                                            </h3>
+                                            <p className="text-sm text-[var(--text-secondary)]">
+                                                {level.description}
+                                            </p>
+                                        </div>
+                                        {isSelected && (
+                                            <div className="absolute top-4 right-4 text-orange-500">
+                                                <Check className="w-5 h-5" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {/* Quiz Mode */}
+                {step === 3 && showQuiz && (
+                    <div className="animate-[fadeIn_0.3s_ease-out] bg-[var(--bg-surface)] p-6 rounded-xl border border-[var(--border-default)]">
+                        {quizScore === null ? (
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="font-medium text-lg">Coding Assessment</h3>
+                                    <span className="text-sm text-[var(--text-secondary)]">
+                                        {quizAnswers.filter(a => a !== undefined).length} / {QUIZ_QUESTIONS.length}
+                                    </span>
+                                </div>
+                                {QUIZ_QUESTIONS.map((q, qIdx) => (
+                                    <div key={qIdx} className="space-y-3">
+                                        <p className="font-medium text-[var(--text-primary)]">{qIdx + 1}. {q.question}</p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            {q.options.map((opt, oIdx) => (
+                                                <button
+                                                    key={oIdx}
+                                                    onClick={() => handleQuizOptionSelect(qIdx, oIdx)}
+                                                    className={cn(
+                                                        "px-4 py-2 text-sm rounded-lg border text-left transition-colors",
+                                                        quizAnswers[qIdx] === oIdx
+                                                            ? "bg-orange-500 text-white border-orange-500"
+                                                            : "border-[var(--border-default)] hover:bg-[var(--bg-canvas)]"
+                                                    )}
+                                                >
+                                                    {opt}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-8">
+                                <Brain className="w-12 h-12 text-orange-500 mx-auto mb-4 animate-bounce" />
+                                <h3 className="text-xl font-bold mb-2">Analyzing...</h3>
+                                <p className="text-[var(--text-secondary)]">Score: {quizScore}/{QUIZ_QUESTIONS.length}</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {/* Footer Actions */}
                 <div className="mt-10 flex justify-between items-center">
                     {step > 1 ? (
@@ -190,10 +365,10 @@ export default function OnboardingPage() {
                         <div /> /* Spacer */
                     )}
 
-                    {step === 1 ? (
+                    {step < 3 ? (
                         <Button
                             onClick={nextStep}
-                            disabled={!selectedRole}
+                            disabled={step === 1 ? !selectedRole : false}
                             className="bg-orange-500 hover:bg-orange-600 text-white min-w-[120px]"
                         >
                             Continue
@@ -203,6 +378,7 @@ export default function OnboardingPage() {
                         <Button
                             onClick={handleFinish}
                             isLoading={isSubmitting}
+                            disabled={!selectedSkillLevel}
                             className="bg-orange-500 hover:bg-orange-600 text-white min-w-[120px]"
                         >
                             Finish Setup

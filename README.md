@@ -33,15 +33,14 @@ Deexen adapts to your current goal with distinct AI operating modes:
 *   **Progress Tracking**: Track daily streaks, hours coded, and skills learned.
 *   **Cloud Sync**: (Coming Soon) seamless project synchronization.
 
-### 🔐 Authentication System
-*   **Secure Login & Signup**: JWT-based authentication integrated with the FastAPI backend.
-*   **OAuth Integration**: Support for GitHub and Google social logins.
+### 🔐 Authentication System (Mock)
+*   **Secure Login & Signup**: Modern, glass-morphic design with real-time field validation.
 *   **Validation Rules**: 
     *   Name (min 2 chars)
     *   Email format checking 
     *   Password strength (min 6 chars) feedback.
-*   **Session Management**: Persists JWT tokens in `localStorage` for seamless sessions.
-*   **Demo Mode**: (Optional) Can be toggled via `VITE_USE_MOCK` in `.env`.
+*   **Session Management**: Persists user session via `localStorage` to handle page reloads.
+*   **Demo Mode**: Use any valid email/password to explore the system (Mock Auth).
 
 ## 🛠 Tech Stack
 

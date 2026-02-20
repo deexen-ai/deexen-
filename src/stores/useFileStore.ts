@@ -17,7 +17,7 @@ interface FileState {
     projectName: string;
 
     // Actions
-    toggleFolder: (id: string) => void;
+    toggleFolder: (id: string, isOpen?: boolean) => void;
     openFile: (id: string) => void;
     closeFile: (id: string) => void;
     selectFile: (id: string) => void;
@@ -31,6 +31,8 @@ interface FileState {
     cutNode: (id: string) => void;
     pasteNode: (parentId: string | null) => void;
     setProjectName: (name: string) => void;
+    moveNode: (activeId: string, overId: string) => void;
+    setFiles: (files: FileNode[]) => void;
 }
 
 const initialFiles: FileNode[] = [
@@ -39,29 +41,7 @@ const initialFiles: FileNode[] = [
         name: 'root',
         type: 'folder',
         isOpen: true,
-        children: [
-            {
-                id: 'src',
-                name: 'src',
-                type: 'folder',
-                isOpen: true,
-                children: [
-                    { id: 'main.tsx', name: 'main.tsx', type: 'file', content: '// Entry point' },
-                    { id: 'App.tsx', name: 'App.tsx', type: 'file', content: '// App component' },
-                    {
-                        id: 'components',
-                        name: 'components',
-                        type: 'folder',
-                        isOpen: false,
-                        children: [
-                            { id: 'Button.tsx', name: 'Button.tsx', type: 'file', content: '// Button component' }
-                        ]
-                    },
-                ]
-            },
-            { id: 'package.json', name: 'package.json', type: 'file', content: '{}' },
-            { id: 'Readme.md', name: 'Readme.md', type: 'file', content: '# Project' },
-        ]
+        children: []
     }
 ];
 
@@ -98,8 +78,11 @@ export const useFileStore = create<FileState>()(
             activeFileId: 'main.tsx',
             projectName: 'deexen-frontend',
 
-            toggleFolder: (id) => set((state) => ({
-                files: updateNode(state.files, id, (node) => ({ ...node, isOpen: !node.isOpen }))
+            toggleFolder: (id, isOpen) => set((state) => ({
+                files: updateNode(state.files, id, (node) => ({
+                    ...node,
+                    isOpen: isOpen !== undefined ? isOpen : !node.isOpen
+                }))
             })),
 
             openFile: (id) => set((state) => {
@@ -128,8 +111,30 @@ export const useFileStore = create<FileState>()(
 
             createFile: (parentId, name) => set((state) => {
                 let newId = name.replace(/\s+/g, '-').toLowerCase();
-                // basic uniqueness check
+                // basic uniqueness check for ID
                 if (findNode(state.files, newId)) newId = `${newId}-${Date.now()}`;
+
+                // --- DUPLICATE NAME CHECK ---
+                // Helper to find parent and check children
+                const checkDuplicate = (nodes: FileNode[], pid: string | null): boolean => {
+                    // If pid is null, check root level (files[0].children)
+                    if (!pid) {
+                        const root = nodes[0];
+                        return root.children?.some(child => child.name === name) || false;
+                    }
+                    // Find parent
+                    const node = findNode(nodes, pid);
+                    if (node && node.children) {
+                        return node.children.some(child => child.name === name);
+                    }
+                    return false;
+                };
+
+                if (checkDuplicate(state.files, parentId)) {
+                    alert(`A file or folder with the name "${name}" already exists in this location.`);
+                    return state; // Cancel creation
+                }
+                // ----------------------------
 
                 const newNode: FileNode = {
                     id: newId,
@@ -159,6 +164,7 @@ export const useFileStore = create<FileState>()(
                 };
             }),
 
+            // ... deleteNode ...
             deleteNode: (id) => set((state) => {
                 // Helper to recursive delete
                 const deleteFromNodes = (nodes: FileNode[]): FileNode[] => {
@@ -177,9 +183,38 @@ export const useFileStore = create<FileState>()(
                 };
             }),
 
-            renameNode: (id: string, newName: string) => set((state) => ({
-                files: updateNode(state.files, id, (node) => ({ ...node, name: newName }))
-            })),
+            renameNode: (id: string, newName: string) => set((state) => {
+                // Find parent of the node to check siblings
+                const findParent = (nodes: FileNode[], targetId: string, parentId: string | null = null): FileNode | null => {
+                    for (const node of nodes) {
+                        if (node.id === targetId) return null; // Should have returned parent previously? No, if root.
+                        // Wait, we need the parent NODE, not just ID.
+                        // Initial call: findParent(files, id)
+                        // Root case: if targetId is in files[0].children
+                        if (node.children) {
+                            if (node.children.some(c => c.id === targetId)) return node;
+                            const found = findParent(node.children, targetId, node.id); // Passing node.id as parentId doesn't help return Node
+                            if (found) return found;
+                        }
+                    }
+                    return null;
+                };
+
+                // For initialFiles structure: root is container.
+                const parentNode = findParent(state.files, id);
+
+                if (parentNode && parentNode.children) {
+                    const exists = parentNode.children.some(child => child.id !== id && child.name === newName);
+                    if (exists) {
+                        alert(`A file or folder with the name "${newName}" already exists in this location.`);
+                        return state;
+                    }
+                }
+
+                return {
+                    files: updateNode(state.files, id, (node) => ({ ...node, name: newName }))
+                };
+            }),
 
             updateFileContent: (id: string, content: string) => set((state) => ({
                 files: updateNode(state.files, id, (node) => ({ ...node, content }))
@@ -295,11 +330,112 @@ export const useFileStore = create<FileState>()(
                     clipboard: mode === 'cut' ? null : state.clipboard // clear clipboard after cut, keep for copy
                 };
             }),
+            pendingMoveNode: (activeId: string, overId: string) => {
+                // Placeholder
+            },
+
+            moveNode: (activeId: string, overId: string) => set((state) => {
+                if (activeId === overId) return state;
+
+                // Helper: Find node
+                const findNode = (nodes: FileNode[], targetId: string): FileNode | null => {
+                    for (const node of nodes) {
+                        if (node.id === targetId) return node;
+                        if (node.children) {
+                            const found = findNode(node.children, targetId);
+                            if (found) return found;
+                        }
+                    }
+                    return null;
+                };
+
+                const activeNode = findNode(state.files, activeId);
+                if (!activeNode) return state;
+
+                // Helper: Check descendant to prevent circular moves
+                const isDescendant = (parent: FileNode, targetId: string): boolean => {
+                    if (parent.id === targetId) return true;
+                    if (parent.children) {
+                        return parent.children.some(child => isDescendant(child, targetId));
+                    }
+                    return false;
+                };
+
+                // Helper: Find Parent ID
+                const findParentId = (nodes: FileNode[], targetId: string, currentParentId: string | null = null): string | null => {
+                    for (const node of nodes) {
+                        if (node.id === targetId) return currentParentId;
+                        if (node.children) {
+                            const found = findParentId(node.children, targetId, node.id);
+                            if (found) return found;
+                        }
+                    }
+                    return null;
+                };
+
+                // Determine effective target parent
+                const overNode = findNode(state.files, overId);
+                let targetParentId: string | null = null;
+
+                if (overNode && overNode.type === 'folder') {
+                    targetParentId = overNode.id;
+                } else {
+                    targetParentId = findParentId(state.files, overId) || 'root'; // Default to root if no parent found (top level items)
+                }
+
+                // Validation: Cannot move folder into its own descendant
+                if (activeNode.type === 'folder' && targetParentId && isDescendant(activeNode, targetParentId)) {
+                    return state;
+                }
+
+                // Helper: Remove Node
+                const removeNode = (nodes: FileNode[], idToRemove: string): FileNode[] => {
+                    return nodes.filter(n => n.id !== idToRemove).map(n => ({
+                        ...n,
+                        children: n.children ? removeNode(n.children, idToRemove) : undefined
+                    }));
+                };
+
+                // Helper: Insert Node
+                const insertNode = (nodes: FileNode[], pid: string | null, newNode: FileNode): FileNode[] => {
+                    // Handle root insertion
+                    if (pid === 'root' || pid === null) {
+                        // Assuming the first node is the project root folder "root"
+                        const root = nodes[0];
+                        if (root.id === 'root') {
+                            return [{ ...root, children: [...(root.children || []), newNode] }];
+                        }
+                        // If structure is different, just append to array? No, strict tree.
+                        // For now assume single root.
+                    }
+
+                    return nodes.map(node => {
+                        if (node.id === pid) {
+                            if (node.type !== 'folder') return node;
+                            return {
+                                ...node,
+                                children: [...(node.children || []), newNode],
+                                isOpen: true
+                            };
+                        }
+                        if (node.children) {
+                            return { ...node, children: insertNode(node.children, pid, newNode) };
+                        }
+                        return node;
+                    });
+                };
+
+                // Execute Move
+                let newFiles = removeNode(state.files, activeId);
+                newFiles = insertNode(newFiles, targetParentId, activeNode);
+
+                return { files: newFiles };
+            }),
+
+            setFiles: (files: FileNode[]) => set({ files }),
         }),
         {
-            name: 'deexen-file-storage', // unique name
-            // Explicitly do NOT persist 'files' for now if user wants clean slate logic, BUT user asked for 'project name, files'.
-            // So we persist everything relevant.
+            name: 'deexen-file-storage',
             partialize: (state) => ({
                 files: state.files,
                 openFiles: state.openFiles,
@@ -309,6 +445,7 @@ export const useFileStore = create<FileState>()(
         }
     )
 );
+
 
 export const getFileBreadcrumbs = (files: FileNode[], targetId: string): string => {
     const findPath = (nodes: FileNode[], currentPath: string[]): string[] | null => {

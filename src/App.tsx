@@ -6,9 +6,13 @@ import DashboardPage from '@/pages/DashboardPage';
 import ProfilePage from '@/pages/ProfilePage';
 import OnboardingPage from '@/pages/OnboardingPage';
 import SettingsPage from '@/pages/SettingsPage';
+import LandingPage from '@/pages/LandingPage';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useThemeStore } from '@/stores/useThemeStore';
+import { useProjectStore } from '@/stores/useProjectStore';
+import Toaster from '@/components/ui/Toaster';
 
+import ProjectsPage from '@/pages/ProjectsPage';
 import WorkspacePage from '@/pages/WorkspacePage';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -20,9 +24,9 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   }
 
   // Redirect to onboarding if not completed (and allow for optional chaining in case user struct is partial)
-  // if (!user?.onboardingCompleted) {
-  //   return <Navigate to="/onboarding" replace />;
-  // }
+  if (!user?.onboardingCompleted) {
+    return <Navigate to="/onboarding" replace />;
+  }
 
   return children;
 }
@@ -45,7 +49,6 @@ function OnboardingRoute({ children }: { children: ReactNode }) {
 
 function App() {
   const initializeAuth = useAuthStore((state) => state.initialize);
-  const theme = useThemeStore((state) => state.theme);
 
   const { theme } = useThemeStore();
 
@@ -59,13 +62,16 @@ function App() {
     initializeAuth();
   }, [initializeAuth]);
 
+  // Clean up legacy mock projects (IDs: 1, 2, 3, 4)
+  const { projects, deleteProject } = useProjectStore();
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
+    const mockIds = ['1', '2', '3', '4'];
+    projects.forEach(p => {
+      if (mockIds.includes(p.id)) {
+        deleteProject(p.id);
+      }
+    });
+  }, [projects, deleteProject]);
 
   return (
     <Router>
@@ -89,6 +95,14 @@ function App() {
           }
         />
         <Route
+          path="/projects"
+          element={
+            <ProtectedRoute>
+              <ProjectsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/profile"
           element={
             <ProtectedRoute>
@@ -106,14 +120,19 @@ function App() {
         />
         <Route
           path="/workspace"
+          element={<Navigate to="/dashboard" replace />}
+        />
+        <Route
+          path="/workspace/:projectId"
           element={
             <ProtectedRoute>
               <WorkspacePage />
             </ProtectedRoute>
           }
         />
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<LandingPage />} />
       </Routes>
+      <Toaster />
     </Router>
   );
 }

@@ -18,7 +18,6 @@ export interface ChatMessage {
 interface AIStore {
     // State
     selectedMode: AIMode;
-    selectedModel: string;
     isLoading: boolean;
     error: string | null;
     response: AIResponse | null;
@@ -31,7 +30,6 @@ interface AIStore {
 
     // Actions
     setMode: (mode: AIMode) => void;
-    setModel: (model: string) => void;
     setLoading: (loading: boolean) => void;
     setError: (error: string | null) => void;
     setResponse: (response: AIResponse) => void;
@@ -49,7 +47,6 @@ interface AIStore {
 
 export const useAIStore = create<AIStore>((set) => ({
     selectedMode: 'debug',
-    selectedModel: 'gemini',
     isLoading: false,
     error: null,
     response: null,
@@ -73,8 +70,6 @@ export const useAIStore = create<AIStore>((set) => ({
             response: null,
             error: null,
         }),
-
-    setModel: (model) => set({ selectedModel: model }),
 
     setLoading: (loading) => set({ isLoading: loading }),
 
