@@ -10,6 +10,7 @@ interface AuthState {
     error: string | null;
     login: (email: string, password: string) => Promise<void>;
     register: (name: string, email: string, password: string) => Promise<void>;
+    loginWithToken: (token: string) => Promise<void>;
     logout: () => void;
     initialize: () => void;
     clearError: () => void;
@@ -68,6 +69,29 @@ export const useAuthStore = create<AuthState>()(
                     const message = error && typeof error === 'object' && 'message' in error
                         ? (error as { message: string }).message
                         : 'Registration failed';
+                    set({ error: message, isLoading: false });
+                    throw error;
+                }
+            },
+
+            loginWithToken: async (token: string) => {
+                set({ isLoading: true, error: null });
+                try {
+                    // Manually set token in localStorage so authService can read it
+                    localStorage.setItem('deexen_token', token);
+
+                    const user = await authService.getProfile();
+
+                    set({
+                        user,
+                        token,
+                        isAuthenticated: true,
+                        isLoading: false
+                    });
+                } catch (error: unknown) {
+                    const message = error && typeof error === 'object' && 'message' in error
+                        ? (error as { message: string }).message
+                        : 'OAuth login failed';
                     set({ error: message, isLoading: false });
                     throw error;
                 }

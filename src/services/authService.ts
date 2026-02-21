@@ -71,7 +71,7 @@ class AuthService {
             return this.mockGetProfile();
         }
 
-        return apiClient.get<User>('/auth/profile');
+        return apiClient.get<User>('/auth/me');
     }
 
     async updateProfile(data: Partial<User>): Promise<User> {
@@ -79,7 +79,7 @@ class AuthService {
             return this.mockUpdateProfile(data);
         }
 
-        return apiClient.put<User>('/auth/profile', data);
+        return apiClient.put<User>('/auth/me', data);
     }
 
     // ==========================================
