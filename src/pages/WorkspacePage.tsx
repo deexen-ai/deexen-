@@ -341,7 +341,7 @@ export default function WorkspacePage() {
                     </div>
 
                     {/* Editor */}
-                    <div className="flex-1 min-h-0 bg-[var(--bg-canvas)]">
+                    <div className="flex-1 min-h-0 flex flex-col relative bg-[var(--bg-canvas)]">
                         <CodeEditor />
                     </div>
 
