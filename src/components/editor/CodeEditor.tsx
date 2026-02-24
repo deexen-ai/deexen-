@@ -49,9 +49,9 @@ export default function CodeEditor() {
     }
 
     return (
-        <div className="h-full bg-[var(--bg-canvas)] flex flex-col w-full overflow-hidden">
+        <div className="h-full bg-transparent flex flex-col w-full overflow-hidden">
             {/* Tabs */}
-            <div className="h-9 flex bg-[var(--bg-surface)] border-b border-[var(--border-default)] overflow-x-auto">
+            <div className="h-10 flex bg-transparent overflow-x-auto px-2 pt-2 pb-1 gap-1.5 z-10 relative">
                 {openFiles.map((fileId) => {
                     const file = findFileContent(fileId);
                     const isActive = fileId === activeFileId;
@@ -59,18 +59,18 @@ export default function CodeEditor() {
                         <div
                             key={fileId}
                             className={cn(
-                                "h-full px-3 flex items-center text-xs cursor-pointer group select-none border-r border-[var(--border-default)]",
+                                "editor-tab flex items-center text-[11px] cursor-pointer group select-none px-3 font-medium tracking-wide",
                                 isActive
-                                    ? "bg-[var(--bg-canvas)] text-[var(--text-primary)] border-t-2 border-t-orange-500"
-                                    : "bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                                    ? "active text-[var(--text-primary)]"
+                                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5"
                             )}
                             onClick={() => selectFile(fileId)}
                         >
-                            <FileCode className={cn("h-3.5 w-3.5 mr-2", isActive ? "text-orange-500" : "text-neutral-600")} />
+                            <FileCode className={cn("h-3.5 w-3.5 mr-2", isActive ? "text-orange-500" : "text-[var(--text-tertiary)] group-hover:text-orange-500/50 transition-colors")} />
                             <span className="truncate max-w-[120px]">{file?.name || fileId}</span>
                             <div
                                 className={cn(
-                                    "ml-2 p-0.5 rounded hover:bg-[var(--bg-surface-hover)]",
+                                    "ml-2 p-0.5 rounded-md hover:bg-white/10 transition-colors",
                                     !isActive && "opacity-0 group-hover:opacity-100"
                                 )}
                                 onClick={(e) => { e.stopPropagation(); closeFile(fileId); }}
@@ -98,24 +98,32 @@ export default function CodeEditor() {
                     options={{
                         minimap: { enabled: false },
                         fontSize: 13,
-                        fontFamily: 'JetBrains Mono, Consolas, monospace',
+                        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                        fontLigatures: true,
+                        letterSpacing: 0.5,
+                        lineHeight: 24,
                         scrollBeyondLastLine: false,
                         automaticLayout: true,
-                        padding: { top: 12 },
+                        padding: { top: 16 },
                         lineNumbers: 'on',
                         renderLineHighlight: 'line',
                         cursorBlinking: 'smooth',
+                        cursorWidth: 2,
                         smoothScrolling: true,
                     }}
                     beforeMount={(monaco) => {
                         monaco.editor.defineTheme('deexen-dark', {
                             base: 'vs-dark',
                             inherit: true,
-                            rules: [],
+                            rules: [
+                                { background: '00000000' } // Ensure transparent rules
+                            ],
                             colors: {
-                                'editor.background': '#0a0a0a',
-                                'editor.lineHighlightBackground': '#141414',
-                                'editorGutter.background': '#0a0a0a',
+                                'editor.background': '#00000000', // Transparent
+                                'editor.lineHighlightBackground': '#ffffff05',
+                                'editorGutter.background': '#00000000',
+                                'editorLineNumber.foreground': '#444444',
+                                'editorLineNumber.activeForeground': '#888888',
                                 'editorCursor.foreground': '#f97316',
                                 'editor.selectionBackground': '#f9731630',
                             }
@@ -125,9 +133,10 @@ export default function CodeEditor() {
                             inherit: true,
                             rules: [],
                             colors: {
-                                'editor.background': '#ffffff',
-                                'editor.lineHighlightBackground': '#f3f4f6',
-                                'editorGutter.background': '#ffffff',
+                                'editor.background': '#ffffff00',
+                                'editor.lineHighlightBackground': '#00000005',
+                                'editorGutter.background': '#ffffff00',
+                                'editorLineNumber.foreground': '#cccccc',
                                 'editorCursor.foreground': '#f97316',
                                 'editor.selectionBackground': '#f9731630',
                             }
