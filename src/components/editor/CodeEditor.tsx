@@ -1,15 +1,24 @@
-import { useEffect, useState } from 'react';
-import Editor from '@monaco-editor/react';
+import React, { useEffect } from 'react';
+import Editor, { loader } from '@monaco-editor/react';
 import { X, FileCode } from 'lucide-react';
 import { useFileStore } from '@/stores/useFileStore';
 import { useThemeStore } from '@/stores/useThemeStore';
+import { useLayoutStore } from '@/stores/useLayoutStore';
 import { cn } from '@/utils/cn';
+
+// Configure Monaco loader to use the CDN
+loader.config({
+    paths: {
+        vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs'
+    }
+});
 
 export default function CodeEditor() {
     const { openFiles, activeFileId, files, closeFile, selectFile, updateFileContent } = useFileStore();
     const { theme } = useThemeStore();
-    const [activeContent, setActiveContent] = useState('');
-    const [activeLanguage, setActiveLanguage] = useState('typescript');
+    const [activeContent, setActiveContent] = React.useState('');
+    const [activeLanguage, setActiveLanguage] = React.useState('typescript');
+    const { isAIPanelOpen, toggleAIPanel } = useLayoutStore();
 
     const findFileContent = (fileId: string) => {
         const find = (nodes: any[]): any => {
@@ -38,15 +47,6 @@ export default function CodeEditor() {
             }
         }
     }, [activeFileId, files]);
-
-    if (!activeFileId || openFiles.length === 0) {
-        return (
-            <div className="h-full bg-[var(--bg-canvas)] flex flex-col items-center justify-center text-[var(--text-secondary)]">
-                <FileCode className="h-12 w-12 mb-3 opacity-30" />
-                <p className="text-sm">Select a file to start editing</p>
-            </div>
-        )
-    }
 
     return (
         <div className="h-full bg-transparent flex flex-col w-full overflow-hidden">
@@ -80,69 +80,101 @@ export default function CodeEditor() {
                         </div>
                     );
                 })}
+
+                <div className="flex-1" />
+
+                <div className="flex items-center space-x-2">
+                    <div className="flex items-center overflow-hidden">
+                        <button
+                            id="ai-panel-toggle"
+                            onClick={toggleAIPanel}
+                            className={cn(
+                                "h-full transition-all duration-300 flex items-center justify-center",
+                                isAIPanelOpen ? "p-1 bg-gray-800" : "hover:bg-gray-800 bg-transparent"
+                            )}
+                            title="Toggle AI Panel"
+                        >
+                            <img
+                                src="/public/deexenlogo.png"
+                                alt="AI Panel"
+                                className={cn(
+                                    "h-4 w-4 transition-all duration-300",
+                                    isAIPanelOpen ? "opacity-100" : "opacity-70 grayscale hover:grayscale-0"
+                                )}
+                            />
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {/* Editor */}
             <div className="flex-1 w-full relative min-h-0">
-                <Editor
-                    height="100%"
-                    language={activeLanguage}
-                    value={activeContent}
-                    theme={theme === 'dark' ? 'deexen-dark' : 'deexen-light'}
-                    onChange={(value) => {
-                        if (activeFileId && value !== undefined) {
-                            setActiveContent(value);
-                            updateFileContent(activeFileId, value);
-                        }
-                    }}
-                    options={{
-                        minimap: { enabled: false },
-                        fontSize: 13,
-                        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                        fontLigatures: true,
-                        letterSpacing: 0.5,
-                        lineHeight: 24,
-                        scrollBeyondLastLine: false,
-                        automaticLayout: true,
-                        padding: { top: 16 },
-                        lineNumbers: 'on',
-                        renderLineHighlight: 'line',
-                        cursorBlinking: 'smooth',
-                        cursorWidth: 2,
-                        smoothScrolling: true,
-                    }}
-                    beforeMount={(monaco) => {
-                        monaco.editor.defineTheme('deexen-dark', {
-                            base: 'vs-dark',
-                            inherit: true,
-                            rules: [
-                                { background: '00000000' } // Ensure transparent rules
-                            ],
-                            colors: {
-                                'editor.background': '#00000000', // Transparent
-                                'editor.lineHighlightBackground': '#ffffff05',
-                                'editorGutter.background': '#00000000',
-                                'editorLineNumber.foreground': '#444444',
-                                'editorLineNumber.activeForeground': '#888888',
-                                'editorCursor.foreground': '#f97316',
-                                'editor.selectionBackground': '#f9731630',
+                {(!activeFileId || openFiles.length === 0) ? (
+                    <div className="h-full w-full bg-[#1e1e1e] flex flex-col items-center justify-center text-[var(--text-secondary)]">
+                        <FileCode className="h-12 w-12 mb-3 opacity-30" />
+                        <p className="text-sm">Select a file to start editing</p>
+                    </div>
+                ) : (
+                    <Editor
+                        height="100%"
+                        language={activeLanguage}
+                        value={activeContent}
+                        theme={theme === 'dark' ? 'deexen-dark' : 'deexen-light'}
+                        onChange={(value) => {
+                            if (activeFileId && value !== undefined) {
+                                setActiveContent(value);
+                                updateFileContent(activeFileId, value);
                             }
-                        });
-                        monaco.editor.defineTheme('deexen-light', {
-                            base: 'vs',
-                            inherit: true,
-                            rules: [],
-                            colors: {
-                                'editor.background': '#ffffff00',
-                                'editor.lineHighlightBackground': '#00000005',
-                                'editorGutter.background': '#ffffff00',
-                                'editorLineNumber.foreground': '#cccccc',
-                                'editorCursor.foreground': '#f97316',
-                                'editor.selectionBackground': '#f9731630',
-                            }
-                        });
-                    }}
-                />
+                        }}
+                        options={{
+                            minimap: { enabled: false },
+                            fontSize: 13,
+                            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                            fontLigatures: true,
+                            letterSpacing: 0.5,
+                            lineHeight: 24,
+                            scrollBeyondLastLine: false,
+                            automaticLayout: true,
+                            padding: { top: 16 },
+                            lineNumbers: 'on',
+                            renderLineHighlight: 'line',
+                            cursorBlinking: 'smooth',
+                            cursorWidth: 2,
+                            smoothScrolling: true,
+                        }}
+                        beforeMount={(monaco) => {
+                            monaco.editor.defineTheme('deexen-dark', {
+                                base: 'vs-dark',
+                                inherit: true,
+                                rules: [
+                                    { background: '00000000' } // Ensure transparent rules
+                                ],
+                                colors: {
+                                    'editor.background': '#00000000', // Transparent
+                                    'editor.lineHighlightBackground': '#ffffff05',
+                                    'editorGutter.background': '#00000000',
+                                    'editorLineNumber.foreground': '#444444',
+                                    'editorLineNumber.activeForeground': '#888888',
+                                    'editorCursor.foreground': '#f97316',
+                                    'editor.selectionBackground': '#f9731630',
+                                }
+                            });
+                            monaco.editor.defineTheme('deexen-light', {
+                                base: 'vs',
+                                inherit: true,
+                                rules: [],
+                                colors: {
+                                    'editor.background': '#ffffff00',
+                                    'editor.lineHighlightBackground': '#00000005',
+                                    'editorGutter.background': '#ffffff00',
+                                    'editorLineNumber.foreground': '#cccccc',
+                                    'editorCursor.foreground': '#f97316',
+                                    'editor.selectionBackground': '#f9731630',
+                                }
+                            });
+                        }}
+                    />
+                )}
             </div>
         </div>
     );

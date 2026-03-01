@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileCode, Search, GitBranch, Settings, ArrowLeft, Puzzle, Blocks, Sparkles } from 'lucide-react';
+import { FileCode, Search, GitBranch, Settings, ArrowLeft, Puzzle, Blocks } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 
@@ -69,7 +69,7 @@ export default function WorkspacePage() {
     const [terminalHeight, setTerminalHeight] = useState(200);
     const [isDragging, setIsDragging] = useState<'left' | 'right' | 'terminal' | null>(null);
 
-    const { isSidebarOpen, setSidebarOpen, toggleSidebar, isTerminalOpen, toggleTerminal, toggleAIPanel, isAIPanelOpen } = useLayoutStore();
+    const { isSidebarOpen, setSidebarOpen, toggleSidebar, isTerminalOpen, toggleTerminal, isTerminalMaximized, toggleAIPanel, isAIPanelOpen } = useLayoutStore();
 
     const { projectId } = useParams();
     const { projects } = useProjectStore();
@@ -184,7 +184,7 @@ export default function WorkspacePage() {
             isDragging && "cursor-grabbing select-none"
         )}>
             {/* Title Bar */}
-            <div className="h-8 bg-[var(--bg-canvas)] border-b border-[var(--border-default)] flex items-center px-3 text-xs select-none">
+            <div className="h-8 bg-[var(--bg-canvas)] border-b border-[var(--border-default)] flex items-center px-3 text-xs select-none z-10">
                 <div
                     id="back-to-dashboard-btn"
                     className="flex items-center space-x-2 cursor-pointer hover:text-[var(--text-primary)] transition-colors text-[var(--text-secondary)]"
@@ -268,7 +268,7 @@ export default function WorkspacePage() {
                 {isSidebarOpen && (
                     <div
                         style={{ width: leftPanelWidth }}
-                        className="flex-shrink-0 flex flex-col bg-[var(--bg-surface)] border-r border-[var(--border-default)] relative"
+                        className="flex-shrink-0 flex flex-col bg-[var(--bg-surface)] border-r border-[var(--border-default)] relative z-10"
                     >
                         {/* Sidebar Header */}
                         <div className="h-9 flex items-center px-4 text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider border-b border-[var(--border-default)]">
@@ -316,29 +316,8 @@ export default function WorkspacePage() {
                 )}
 
                 {/* Main Editor Area */}
-                <div id="editor-pane" className="flex-1 flex flex-col min-w-0 bg-[#1e1e1e]">
-                    {/* Editor Header / Tabs */}
-                    <div className="h-9 bg-[#2d2d2d] flex items-center px-4 border-b border-[#1e1e1e] justify-between">
-                        <span className="text-sm text-gray-300">{activeFilePath}</span>
-                        <div className="flex items-center space-x-2">
-                            <button
-                                id="run-project-btn"
-                                className="p-1 hover:bg-[#3d3d3d] rounded text-green-500" title="Run Project">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </button>
-                            <button
-                                id="ai-panel-toggle"
-                                onClick={toggleAIPanel}
-                                className={cn("p-1 hover:bg-[#3d3d3d] rounded transition-colors", isAIPanelOpen ? "text-orange-500" : "text-gray-400")}
-                                title="Toggle AI Panel"
-                            >
-                                <Sparkles className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
+                <div id="editor-pane" className="flex-1 flex flex-col min-w-0 bg-[#1e1e1e] relative">
+                    {/* Editor Header / Tabs removed to prevent duplicate bars */}
 
                     {/* Editor */}
                     <div className="flex-1 min-h-0 flex flex-col relative bg-[var(--bg-canvas)]">
@@ -346,16 +325,21 @@ export default function WorkspacePage() {
                     </div>
 
                     {/* Terminal Resize Handle */}
-                    {isTerminalOpen && (
+                    {isTerminalOpen && !isTerminalMaximized && (
                         <div
-                            className="h-1 bg-[var(--bg-surface)] cursor-row-resize hover:bg-orange-500/50 transition-colors"
+                            className="h-1 bg-[var(--bg-surface)] cursor-row-resize hover:bg-orange-500/50 transition-colors z-20 relative"
                             onMouseDown={startResize('terminal')}
                         />
                     )}
 
                     {/* Terminal */}
                     {isTerminalOpen && (
-                        <div style={{ height: terminalHeight }} className="flex-shrink-0 bg-[var(--bg-canvas)] border-t border-[var(--border-default)]">
+                        <div
+                            style={isTerminalMaximized ? {} : { height: terminalHeight }}
+                            className={cn(
+                                "flex-shrink-0 bg-[var(--bg-canvas)] border-t border-[var(--border-default)] z-30",
+                                isTerminalMaximized && "absolute inset-0"
+                            )}>
                             <Terminal />
                         </div>
                     )}
