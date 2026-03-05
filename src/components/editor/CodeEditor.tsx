@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import Editor, { loader } from '@monaco-editor/react';
-import { X, FileCode } from 'lucide-react';
+import { X, FileCode, Play } from 'lucide-react';
 import { useFileStore } from '@/stores/useFileStore';
 import { useThemeStore } from '@/stores/useThemeStore';
 import { useLayoutStore } from '@/stores/useLayoutStore';
+import { useTerminalStore } from '@/stores/useTerminalStore';
 import { cn } from '@/utils/cn';
 
 // Configure Monaco loader to use the CDN
@@ -14,11 +15,18 @@ loader.config({
 });
 
 export default function CodeEditor() {
-    const { openFiles, activeFileId, files, closeFile, selectFile, updateFileContent } = useFileStore();
+    const { openFiles, activeFileId, files, closeFile, selectFile, updateFileContent, projectName } = useFileStore();
     const { theme } = useThemeStore();
+    const { isAIPanelOpen, toggleAIPanel, setTerminalOpen } = useLayoutStore();
+    const { executeCommand } = useTerminalStore();
+
     const [activeContent, setActiveContent] = React.useState('');
     const [activeLanguage, setActiveLanguage] = React.useState('typescript');
-    const { isAIPanelOpen, toggleAIPanel } = useLayoutStore();
+
+    const handleRun = () => {
+        setTerminalOpen(true);
+        executeCommand('npm run dev', projectName || 'project');
+    };
 
     const findFileContent = (fileId: string) => {
         const find = (nodes: any[]): any => {
@@ -83,27 +91,40 @@ export default function CodeEditor() {
 
                 <div className="flex-1" />
 
-                <div className="flex items-center space-x-2">
-                    <div className="flex items-center overflow-hidden">
-                        <button
-                            id="ai-panel-toggle"
-                            onClick={toggleAIPanel}
+                <div className="flex items-center gap-1.5 px-3">
+                    {/* Run Button */}
+                    <button
+                        onClick={handleRun}
+                        className="group relative flex items-center justify-center h-8 w-8 transition-all duration-300"
+                        title="Run Code"
+                    >
+                        <div className="absolute inset-0 bg-emerald-500/5 rounded-full scale-0 group-hover:scale-100 transition-transform duration-300" />
+                        <div className="relative h-6 w-6 rounded-full border border-emerald-500/40 group-hover:border-emerald-500 flex items-center justify-center transition-colors duration-300">
+                            <Play className="h-2.5 w-2.5 text-emerald-500 fill-emerald-500" />
+                        </div>
+                    </button>
+
+
+                    <div className="w-px h-4 bg-[var(--border-muted)] mx-1" />
+
+                    <button
+                        id="ai-panel-toggle"
+                        onClick={toggleAIPanel}
+                        className={cn(
+                            "h-8 w-8 transition-all duration-300 flex items-center justify-center rounded-lg",
+                            isAIPanelOpen ? "bg-orange-500/10 text-orange-500" : "hover:bg-white/5 text-[var(--text-secondary)]"
+                        )}
+                        title="Toggle AI Panel"
+                    >
+                        <img
+                            src="/deexenlogo.png"
+                            alt="AI Panel"
                             className={cn(
-                                "h-full transition-all duration-300 flex items-center justify-center",
-                                isAIPanelOpen ? "p-1 bg-gray-800" : "hover:bg-gray-800 bg-transparent"
+                                "h-3.5 w-3.5 transition-all duration-300",
+                                isAIPanelOpen ? "opacity-100" : "opacity-40 grayscale group-hover:opacity-70"
                             )}
-                            title="Toggle AI Panel"
-                        >
-                            <img
-                                src="/public/deexenlogo.png"
-                                alt="AI Panel"
-                                className={cn(
-                                    "h-4 w-4 transition-all duration-300",
-                                    isAIPanelOpen ? "opacity-100" : "opacity-70 grayscale hover:grayscale-0"
-                                )}
-                            />
-                        </button>
-                    </div>
+                        />
+                    </button>
                 </div>
             </div>
 

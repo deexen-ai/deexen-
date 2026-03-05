@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Box, LayoutTemplate, Github } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useProjectStore } from '@/stores/useProjectStore';
+import { useToastStore } from '@/stores/useToastStore';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
@@ -17,6 +18,7 @@ export default function NewProjectModal({ isOpen, onClose }: NewProjectModalProp
     if (!isOpen) return null;
 
     const { addProject } = useProjectStore();
+    const { addToast } = useToastStore();
     const [step, setStep] = useState<Step>('select-type');
 
     // Form State
@@ -51,6 +53,7 @@ export default function NewProjectModal({ isOpen, onClose }: NewProjectModalProp
                 fileStructure: '/src'
             });
             setIsCreating(false);
+            addToast(`Project "${name}" created successfully!`, 'success');
             onClose();
             // Reset state
             setStep('select-type');

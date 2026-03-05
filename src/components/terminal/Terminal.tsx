@@ -1,47 +1,48 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Plus, ChevronDown, MoreHorizontal, Maximize, Minimize2, X, TerminalSquare, AlertTriangle, Trash2 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useFileStore } from '@/stores/useFileStore';
 import { useLayoutStore } from '@/stores/useLayoutStore';
-
-interface TerminalSession {
-    id: number;
-    name: string;
-    hasWarning?: boolean;
-}
+import { useTerminalStore } from '@/stores/useTerminalStore';
 
 export default function Terminal() {
     const [activeTab, setActiveTab] = useState<'Problems' | 'Output' | 'Debug Console' | 'Terminal' | 'Ports'>('Terminal');
     const { projectName } = useFileStore();
     const { setTerminalOpen, toggleTerminalMaximized, isTerminalMaximized } = useLayoutStore();
+    const { history, sessions, activeSessionId, addSession, deleteActiveSession, setActiveSession, executeCommand } = useTerminalStore();
 
-    // Local Session State
-    const [sessions, setSessions] = useState<TerminalSession[]>([
-        { id: 1, name: 'e...', hasWarning: true },
-        { id: 2, name: 'pwsh' }
-    ]);
-    const [activeSessionId, setActiveSessionId] = useState<number>(2);
     const [command, setCommand] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (activeTab === 'Terminal' && scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({
+                top: scrollContainerRef.current.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+    }, [history, activeTab]);
 
     const handleAddSession = () => {
-        const newId = Date.now();
-        setSessions(prev => [...prev, { id: newId, name: 'pwsh' }]);
-        setActiveSessionId(newId);
+        addSession('pwsh');
     };
 
     const handleDeleteSession = () => {
-        setSessions(prev => {
-            const filtered = prev.filter(s => s.id !== activeSessionId);
-            if (filtered.length > 0) setActiveSessionId(filtered[filtered.length - 1].id);
-            else setActiveSessionId(-1); // No active session if all are deleted
-            return filtered;
-        });
+        deleteActiveSession();
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            executeCommand(command, projectName);
+            setCommand('');
+        }
     };
 
     return (
         <div
             className="h-full bg-[#181818] flex flex-col font-mono text-[13px] overflow-hidden text-[#cccccc]"
+            onClick={() => activeTab === 'Terminal' && inputRef.current?.focus()}
         >
             {/* Tabs Header */}
             <div className="h-9 px-4 flex items-center flex-shrink-0 select-none gap-4 border-b border-[#2b2b2b]">
@@ -111,30 +112,37 @@ export default function Terminal() {
                     <>
                         {/* Main Terminal View */}
                         <div
-                            className="flex-1 h-full pl-5 pr-2 py-3 overflow-auto flex items-start cursor-text"
+                            ref={scrollContainerRef}
+                            className="flex-1 h-full pl-5 pr-2 py-3 overflow-auto cursor-text"
                             onClick={() => inputRef.current?.focus()}
                         >
                             {sessions.length === 0 ? (
                                 <div className="text-[#808080] italic px-2">No terminal sessions active. Click '+' to start a new session.</div>
                             ) : (
-                                <>
-                                    {/* Left margin circle indicator */}
-                                    <div className="mt-[6px] mr-[18px] shrink-0">
-                                        <div className="h-2 w-2 rounded-full border border-[#4d4d4d]" />
-                                    </div>
-                                    <div className="flex-1 leading-relaxed flex items-center flex-wrap">
+                                <div className="font-mono text-[13px] leading-relaxed">
+                                    {history.map((line) => (
+                                        <div key={line.id} className="mb-1">
+                                            {line.content}
+                                        </div>
+                                    ))}
+                                    <div className="flex items-center">
+                                        {/* Left margin circle indicator */}
+                                        <div className="mr-[18px] shrink-0">
+                                            <div className="h-2 w-2 rounded-full border border-[#4d4d4d]" />
+                                        </div>
                                         <span className="text-[#cccccc] mr-1 whitespace-nowrap">PS C:\Users\11ara\github\{projectName?.toLowerCase().replace(/\s+/g, '-') || 'deexen-frontend'}&gt;</span>
                                         <input
                                             ref={inputRef}
                                             type="text"
                                             value={command}
                                             onChange={(e) => setCommand(e.target.value)}
+                                            onKeyDown={handleKeyDown}
                                             className="bg-transparent border-none outline-none text-[#cccccc] flex-1 min-w-[50px] font-mono text-[13px]"
                                             autoFocus
                                             spellCheck={false}
                                         />
                                     </div>
-                                </>
+                                </div>
                             )}
                         </div>
 
@@ -147,7 +155,7 @@ export default function Terminal() {
                                         "px-3 py-[2px] flex items-center gap-2 cursor-pointer group",
                                         activeSessionId === session.id ? "bg-[#37373d]" : "hover:bg-[#2a2d2e]"
                                     )}
-                                    onClick={() => setActiveSessionId(session.id)}
+                                    onClick={() => setActiveSession(session.id)}
                                 >
                                     <TerminalSquare className="h-[14px] w-[14px] text-[#cccccc]" />
                                     <span className={cn(

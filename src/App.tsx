@@ -13,6 +13,7 @@ import { useProjectStore } from '@/stores/useProjectStore';
 import Toaster from '@/components/ui/Toaster';
 
 import ProjectsPage from '@/pages/ProjectsPage';
+import DeploymentsPage from '@/pages/DeploymentsPage';
 import WorkspacePage from '@/pages/WorkspacePage';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -99,6 +100,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ProjectsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/deployments"
+          element={
+            <ProtectedRoute>
+              <DeploymentsPage />
             </ProtectedRoute>
           }
         />

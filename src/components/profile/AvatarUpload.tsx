@@ -1,19 +1,20 @@
 import { useRef, useState } from 'react';
-import { Camera, User } from 'lucide-react';
+import { Camera } from 'lucide-react';
 import { cn } from '@/utils/cn';
-import { Button } from '@/components/ui/Button';
+import Avatar from '@/components/ui/Avatar';
 
 interface AvatarUploadProps {
     currentAvatar: string;
     onAvatarChange: (file: File, base64: string) => void;
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'sm' | 'md' | 'lg' | 'xl';
     editable?: boolean;
 }
 
-const sizes = {
+const sizeClasses = {
     sm: 'w-16 h-16',
     md: 'w-24 h-24',
     lg: 'w-32 h-32',
+    xl: 'w-48 h-48',
 };
 
 export default function AvatarUpload({ currentAvatar, onAvatarChange, size = 'md', editable = true }: AvatarUploadProps) {
@@ -49,16 +50,17 @@ export default function AvatarUpload({ currentAvatar, onAvatarChange, size = 'md
         <div className="relative inline-block group">
             <div
                 className={cn(
-                    "relative rounded-full overflow-hidden border-2 border-[var(--border-default)] bg-[var(--bg-surface)]",
-                    sizes[size],
+                    "relative rounded-full border-2 border-[var(--border-default)] bg-[var(--bg-surface)]",
+                    sizeClasses[size],
                     editable && "cursor-pointer"
                 )}
                 onClick={triggerUpload}
             >
-                <img
+                <Avatar
                     src={preview || currentAvatar}
-                    alt="Avatar"
-                    className="w-full h-full object-cover"
+                    alt="User"
+                    size={size === 'md' ? 'lg' : size === 'lg' ? 'xl' : 'sm'}
+                    className="w-full h-full"
                 />
 
                 {editable && (

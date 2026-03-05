@@ -13,6 +13,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import AvatarUpload from '@/components/profile/AvatarUpload';
+import { useToastStore } from '@/stores/useToastStore';
 
 type SettingsTab = 'profile' | 'account' | 'appearance' | 'notifications' | 'billing';
 
@@ -20,6 +21,7 @@ export default function SettingsPage() {
     const { user, updateUser } = useAuthStore();
     const { theme, setTheme } = useThemeStore();
     const { isSidebarOpen } = useLayoutStore();
+    const { addToast } = useToastStore();
     const navigate = useNavigate();
 
     const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
@@ -50,6 +52,7 @@ export default function SettingsPage() {
                 ...(newAvatar && { avatar: newAvatar })
             });
             setIsLoading(false);
+            addToast('Profile updated successfully!', 'success');
         }, 800);
     };
 
