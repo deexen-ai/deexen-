@@ -1,12 +1,13 @@
 
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-    Home, FolderOpen, Activity, Settings,
+    Home, FolderOpen, Settings,
     Box, Bell, LogOut, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useLayoutStore } from '@/stores/useLayoutStore';
 import { cn } from '@/utils/cn';
+import Avatar from '@/components/ui/Avatar';
 
 export default function Sidebar() {
     const navigate = useNavigate();
@@ -20,7 +21,6 @@ export default function Sidebar() {
         { icon: Home, label: 'Home', path: '/dashboard' },
         { icon: FolderOpen, label: 'Projects', path: '/projects' }, // Keeping dashboard as main for now
         { icon: Box, label: 'Deployments', path: '/deployments' },
-        { icon: Activity, label: 'Activity', path: '/activity' },
         { icon: Settings, label: 'Settings', path: '/settings' },
     ];
 
@@ -49,7 +49,7 @@ export default function Sidebar() {
                             onClick={() => navigate('/dashboard')}
                             className="text-sm font-medium text-[var(--text-primary)] tracking-tight animate-in fade-in duration-200 cursor-pointer hover:text-orange-500 transition-colors"
                         >
-                            Deexen
+                            Deexen AI
                         </span>
                     )}
                 </div>
@@ -107,7 +107,7 @@ export default function Sidebar() {
                         !isSidebarOpen && "justify-center px-0"
                     )}
                 >
-                    <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full bg-gray-200 dark:bg-zinc-800" />
+                    <Avatar src={user.avatar} alt={user.name} size="sm" />
                     {isSidebarOpen && (
                         <div className="flex-1 min-w-0 animate-in fade-in duration-200">
                             <p className="text-sm font-medium text-[var(--text-primary)] truncate group-hover:text-[var(--text-primary)]">{user.name}</p>

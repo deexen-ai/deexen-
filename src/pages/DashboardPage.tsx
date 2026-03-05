@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Plus, Search, Terminal,
-    GitBranch, Activity, AlertCircle, Settings, Sparkles, Sun, Moon
+    GitBranch, Activity, AlertCircle, Settings, Sparkles, Sun, Moon, Trash2
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -10,6 +10,7 @@ import { useAIStore } from '@/stores/useAIStore';
 import { useThemeStore } from '@/stores/useThemeStore';
 import { useLayoutStore } from '@/stores/useLayoutStore';
 import { useProjectStore } from '@/stores/useProjectStore';
+import { useToastStore } from '@/stores/useToastStore';
 import Sidebar from '@/components/layout/Sidebar';
 import AiAssistant from '@/components/AiAssistant/AiAssistant';
 import NewProjectModal from '@/components/dashboard/NewProjectModal';
@@ -166,7 +167,7 @@ export default function DashboardPage() {
                                     View All
                                 </button>
                             </div>
-                            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl overflow-hidden shadow-sm">
+                            <div className="bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-sm">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
                                         <tr className="border-b border-[var(--border-default)] bg-[var(--bg-canvas)] text-xs uppercase text-[var(--text-secondary)] font-medium">
@@ -245,12 +246,39 @@ interface ProjectRowProps {
 
 function ProjectRow({ project, onClick }: ProjectRowProps) {
     const { setTriggerMessage, setChatOpen } = useAIStore();
+    const { deleteProject } = useProjectStore();
+    const { addToast } = useToastStore();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
 
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsMenuOpen(false);
+            }
+        };
+        if (isMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isMenuOpen]);
 
     const handleAiClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         setTriggerMessage(`Explain ${project.name}`);
         setChatOpen(true);
+        setIsMenuOpen(false);
+    };
+
+    const handleDeleteClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (window.confirm(`Are you sure you want to delete "${project.name}"?`)) {
+            deleteProject(project.id);
+            addToast(`Project "${project.name}" deleted.`, 'info');
+        }
+        setIsMenuOpen(false);
     };
 
     const getLanguageColor = (lang: string) => {
@@ -317,16 +345,11 @@ function ProjectRow({ project, onClick }: ProjectRowProps) {
                 <span className="text-xs text-[var(--text-secondary)]">{project.lastUpdated}</span>
             </td>
 
-            {/* Actions */}
             <td className="px-6 py-4 text-right">
-                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                        onClick={handleAiClick}
-                        className="p-1.5 bg-violet-500/10 hover:bg-violet-500/20 text-violet-600 dark:text-violet-400 rounded-md transition-colors"
-                        title="Ask AI"
-                    >
-                        <Sparkles className="w-3.5 h-3.5" />
-                    </button>
+                <div className={cn(
+                    "flex items-center justify-end gap-2 transition-opacity",
+                    isMenuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}>
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
@@ -336,9 +359,40 @@ function ProjectRow({ project, onClick }: ProjectRowProps) {
                     >
                         Launch
                     </button>
-                    <button className="p-1.5 hover:bg-[var(--bg-canvas)] rounded-md transition-colors">
-                        <Settings className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
-                    </button>
+                    <div className="relative" ref={menuRef}>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsMenuOpen(!isMenuOpen);
+                            }}
+                            className={cn(
+                                "p-1.5 hover:bg-[var(--bg-canvas)] rounded-md transition-colors",
+                                isMenuOpen && "bg-[var(--bg-canvas)] text-orange-500"
+                            )}
+                        >
+                            <Settings className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+                        </button>
+
+                        {isMenuOpen && (
+                            <div className="absolute right-0 bottom-full mb-2 w-48 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg shadow-2xl py-2 z-[100] animate-in fade-in slide-in-from-bottom-2 duration-200 backdrop-blur-xl">
+                                <button
+                                    onClick={handleAiClick}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] transition-colors"
+                                >
+                                    <Sparkles className="w-3.5 h-3.5 text-violet-500" />
+                                    Ask AI assistant
+                                </button>
+                                <div className="h-px bg-[var(--border-muted)] my-1" />
+                                <button
+                                    onClick={handleDeleteClick}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-500 hover:bg-red-500/5 transition-colors"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    Delete Project
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </td>
         </tr>

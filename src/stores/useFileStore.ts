@@ -185,15 +185,12 @@ export const useFileStore = create<FileState>()(
 
             renameNode: (id: string, newName: string) => set((state) => {
                 // Find parent of the node to check siblings
-                const findParent = (nodes: FileNode[], targetId: string, parentId: string | null = null): FileNode | null => {
+                const findParent = (nodes: FileNode[], targetId: string): FileNode | null => {
                     for (const node of nodes) {
-                        if (node.id === targetId) return null; // Should have returned parent previously? No, if root.
-                        // Wait, we need the parent NODE, not just ID.
-                        // Initial call: findParent(files, id)
-                        // Root case: if targetId is in files[0].children
+                        if (node.id === targetId) return null;
                         if (node.children) {
                             if (node.children.some(c => c.id === targetId)) return node;
-                            const found = findParent(node.children, targetId, node.id); // Passing node.id as parentId doesn't help return Node
+                            const found = findParent(node.children, targetId);
                             if (found) return found;
                         }
                     }
@@ -330,9 +327,6 @@ export const useFileStore = create<FileState>()(
                     clipboard: mode === 'cut' ? null : state.clipboard // clear clipboard after cut, keep for copy
                 };
             }),
-            pendingMoveNode: (activeId: string, overId: string) => {
-                // Placeholder
-            },
 
             moveNode: (activeId: string, overId: string) => set((state) => {
                 if (activeId === overId) return state;

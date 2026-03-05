@@ -101,11 +101,8 @@ export default function SignupPage() {
         <div className="min-h-screen w-full bg-[var(--bg-canvas)] flex items-center justify-center font-sans">
             <div className="w-full max-w-[360px] px-6">
                 {/* Logo */}
-                <div className="flex items-center justify-center mb-8">
-                    <div className="flex items-center space-x-2">
-                        <img src="/deexenlogo.png" alt="Deexen" className="h-8" />
-                        <span className="text-[var(--text-primary)] text-lg font-semibold">Deexen</span>
-                    </div>
+                <div className="flex items-center justify-center mb-10">
+                    <img src="/deexen_full_logo.png" alt="Deexen AI" className="h-20 w-auto object-contain" />
                 </div>
 
                 {/* Form */}

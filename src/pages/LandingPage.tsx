@@ -1,60 +1,89 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, Search, Code2, Users, FolderKanban, Sun, Moon } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Code2, Users, FolderKanban } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { useThemeStore } from '@/stores/useThemeStore';
 
 export default function LandingPage() {
-    const { theme, toggleTheme } = useThemeStore();
+
     const navigate = useNavigate();
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            setMousePos({ x: e.clientX, y: e.clientY });
+        };
+        window.addEventListener('mousemove', handleMouseMove);
+        return () => window.removeEventListener('mousemove', handleMouseMove);
+    }, []);
 
     return (
-        <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans selection:bg-orange-200 dark:selection:bg-orange-900/30">
+        <div className="min-h-screen bg-[#000000] text-[#ededed] font-sans selection:bg-[#FF6A00]/30 selection:text-white relative overflow-hidden">
 
-            {/* Navigation */}
-            <nav className="fixed top-0 left-0 right-0 z-50 h-16 bg-[var(--bg-canvas)]/80 backdrop-blur-md border-b border-[var(--border-default)] flex items-center justify-between px-6 max-w-2xl mx-auto w-full transition-colors duration-300">
-                <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/')}>
-                    <img src="/deexenlogo.png" alt="Deexen" className="h-8" />
-                    <span className="text-xl font-display font-bold tracking-tight text-[var(--text-primary)]">Deexen</span>
+            {/* Immersive Background Elements */}
+            <div className="absolute inset-0 z-0 pointer-events-none">
+                {/* Charcoal to black gradient */}
+                <div className="absolute inset-0 bg-gradient-to-b from-[#111111] via-[#050505] to-[#000000]"></div>
+
+                {/* Interactive cursor spotlight */}
+                <div
+                    className="absolute inset-0 mix-blend-screen transition-all duration-75 ease-out opacity-60"
+                    style={{
+                        background: `radial-gradient(1000px circle at ${mousePos.x}px ${mousePos.y}px, rgba(255, 106, 0, 0.08), transparent 40%)`
+                    }}
+                ></div>
+
+                {/* Central radial soft glow */}
+                <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[#FF6A00] opacity-[0.05] blur-[100px] rounded-[100%] pointer-events-none animate-[pulse_4s_ease-in-out_infinite]"></div>
+
+                {/* Technical developer grid overlay */}
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_70%_70%_at_50%_30%,#000_60%,transparent_100%)]"></div>
+
+                {/* Soft ambient vignette */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,#000000_100%)]"></div>
+
+                {/* Simulated floating particles via CSS pattern */}
+                <div className="absolute inset-0 opacity-[0.02] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjZmZmIi8+Cjwvc3ZnPg==')] [mask-image:linear-gradient(to_bottom,transparent,black,transparent)] animate-[pulse_8s_ease-in-out_infinite]"></div>
+            </div>
+
+            {/* Glassmorphism Navigation */}
+            <nav className="fixed top-0 left-0 right-0 z-50 h-[72px] bg-[#000000]/40 backdrop-blur-xl border-b border-white/[0.04] flex items-center justify-between px-8 max-w-[1200px] mx-auto w-full transition-all duration-300">
+                <div className="flex items-center cursor-pointer group" onClick={() => navigate('/')}>
+                    <img src="/deexen_full_logo.png" alt="Deexen AI" className="h-7 group-hover:scale-105 transition-transform duration-500 brightness-[100] saturate-0" />
                 </div>
-                <div className="flex items-center space-x-4">
-                    <button
-                        onClick={toggleTheme}
-                        className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] rounded-lg transition-colors"
-                        title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                    >
-                        {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                    </button>
-                    <Button variant="ghost" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => navigate('/login')}>Log in</Button>
-                    <Button variant="primary" onClick={() => navigate('/signup')}>Sign up</Button>
+                <div className="flex items-center space-x-6 relative z-10">
+                    <button className="text-[14px] font-medium text-[#888888] hover:text-white transition-colors duration-300" onClick={() => navigate('/login')}>Log in</button>
+                    <button className="text-[14px] font-medium bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white px-5 py-2 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(255,255,255,0.05)]" onClick={() => navigate('/signup')}>Sign up</button>
                 </div>
             </nav>
 
-            <main className="pt-32 pb-20 px-6 max-w-2xl mx-auto w-full">
+            {/* Smooth Scroll Content Container */}
+            <main className="pt-[180px] pb-20 px-6 max-w-[1000px] mx-auto w-full relative z-10 h-screen overflow-y-auto" style={{ scrollBehavior: 'smooth' }}>
 
                 {/* Hero Section */}
-                <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-24">
-                    <div className="inline-flex items-center space-x-2 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-full px-3 py-1 text-xs font-medium mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
-                        <span className="text-[var(--text-secondary)]">New: User Profiles & Activity Graph</span>
-                        <ArrowRight className="w-3 h-3 text-[var(--text-tertiary)] ml-1" />
+                <div className="flex flex-col items-center text-center mx-auto mb-32 relative">
+                    <div className="inline-flex items-center space-x-2.5 bg-white/[0.02] backdrop-blur-md border border-white/[0.06] rounded-full px-4 py-2 text-xs font-medium mb-10 hover:border-[#FF6A00]/30 hover:bg-[#FF6A00]/5 hover:shadow-[0_0_24px_rgba(255,106,0,0.15)] transition-all duration-500 cursor-pointer animate-in fade-in slide-in-from-bottom-8 duration-1000 ease-out group">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#FF6A00] shadow-[0_0_10px_rgba(255,106,0,1)] animate-[pulse_2s_ease-in-out_infinite]"></span>
+                        <span className="text-[#a1a1a1] tracking-wide">Deexen 2.0 is now in beta</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-[#555] group-hover:text-[#FF6A00] transition-colors" />
                     </div>
 
-                    <h1 className="font-display text-5xl md:text-7xl leading-[1] mb-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-100 tracking-tight text-[var(--text-primary)]">
-                        The Professional IDE <br />
-                        <span className="text-[var(--text-tertiary)] italic">for builders to show & tell.</span>
+                    <h1 className="font-sans text-[64px] md:text-[96px] font-bold leading-[1.05] tracking-[-0.04em] mb-6 animate-in fade-in slide-in-from-bottom-12 duration-[1.2s] delay-150 ease-out">
+                        <span className="text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.05)]">The Professional IDE</span> <br />
+                        <span className="text-[#777777] font-normal italic tracking-[-0.02em]">for builders to show & tell.</span>
                     </h1>
 
-                    <p className="text-lg text-[var(--text-secondary)] max-w-lg mx-auto mb-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
+                    <p className="text-[18px] md:text-[20px] text-[#888888] font-normal max-w-[620px] mx-auto mb-12 animate-in fade-in slide-in-from-bottom-12 duration-[1.2s] delay-300 leading-[1.6]">
                         A modern development environment that combines professional coding tools with social proof. Showcase your skills, track your progress, and build your legacy.
                     </p>
 
-                    <div className="flex items-center justify-center space-x-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-                        <Button variant="primary" size="lg" className="h-12 px-8 text-base bg-orange-600 hover:bg-orange-500 text-white rounded-full" onClick={() => navigate('/signup')}>
-                            Get Started
-                        </Button>
-                        <Button variant="outline" size="lg" className="h-12 px-8 text-base rounded-full border-[var(--border-default)] text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)]" onClick={() => navigate('/login')}>
+                    <div className="flex items-center justify-center space-x-5 animate-in fade-in slide-in-from-bottom-12 duration-[1.2s] delay-500">
+                        <button className="relative group h-[52px] px-8 text-[15px] font-medium bg-[#FF6A00] text-white rounded-full transition-all duration-300 hover:-translate-y-0.5" onClick={() => navigate('/signup')}>
+                            <div className="absolute inset-0 rounded-full bg-[#FF6A00] blur-[15px] opacity-40 group-hover:opacity-80 group-hover:blur-[25px] transition-all duration-300 animate-[pulse_3s_ease-in-out_infinite]"></div>
+                            <span className="relative z-10 flex items-center gap-2">Get Started <ArrowRight className="w-4 h-4 ml-1 opacity-70 group-hover:translate-x-1 group-hover:opacity-100 transition-all" /></span>
+                        </button>
+                        <button className="h-[52px] px-8 text-[15px] font-medium bg-transparent border border-white/[0.1] text-[#ececec] rounded-full hover:bg-white/[0.04] transition-all duration-300 hover:border-white/[0.2] hover:-translate-y-0.5" onClick={() => navigate('/login')}>
                             Sign In
-                        </Button>
+                        </button>
                     </div>
                 </div>
 
