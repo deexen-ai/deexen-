@@ -119,12 +119,9 @@ export default function Terminal() {
             // Ask AI for a fix
             // Use 'livefix' mode for concise JSON/Code response if possible, or 'expert'
             const analysis = await aiService.analyze(
-                'chat',
-                'gemini',
+                'debug',
                 `The command \`${cmd}\` failed with:\n\`\`\`\n${errorOutput}\n\`\`\`\n\nExplain why briefly and provide the corrected command.`,
-                'Terminal Error Analysis',
-                'bash',
-                'expert'
+                'Terminal Error Analysis'
             );
 
             setHistory(prev => [...prev, {

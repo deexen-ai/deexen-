@@ -147,8 +147,8 @@ const FileTreeItem = ({ node, level, onContextMenu, renamingId, onRenameSubmit, 
                 {...listeners}
                 style={{ ...style, paddingLeft: `${indent + 8}px` }}
                 className={cn(
-                    "flex items-center h-6 pr-2 cursor-pointer transition-colors group",
-                    isSelected && !isRenaming ? "bg-[var(--bg-surface-hover)] text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)]",
+                    "flex items-center h-7 pr-2 cursor-pointer transition-all duration-300 group relative border-l-2",
+                    isSelected && !isRenaming ? "bg-white/5 border-orange-500 text-[var(--text-primary)] shadow-sm backdrop-blur-sm" : "border-transparent text-[var(--text-secondary)] hover:bg-white/5 hover:text-[var(--text-primary)]",
                     isOver && node.type === 'folder' && "outline outline-1 outline-orange-500 rounded-sm"
                 )}
                 onClick={handleClick}
@@ -197,7 +197,8 @@ const FileTreeItem = ({ node, level, onContextMenu, renamingId, onRenameSubmit, 
             </div>
 
             {node.type === 'folder' && node.isOpen && node.children && (
-                <div>
+                <div className="relative">
+                    <div className="absolute left-[13px] top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-white/5 to-transparent pointer-events-none" />
                     <div>
                         {creationState && creationState.parentId === node.id && (
                             <CreationItem

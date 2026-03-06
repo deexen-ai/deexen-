@@ -9,15 +9,47 @@ import SettingsPage from '@/pages/SettingsPage';
 import LandingPage from '@/pages/LandingPage';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useThemeStore } from '@/stores/useThemeStore';
-import { useProjectStore } from '@/stores/useProjectStore';
 import Toaster from '@/components/ui/Toaster';
 
 import ProjectsPage from '@/pages/ProjectsPage';
+import DeploymentsPage from '@/pages/DeploymentsPage';
 import WorkspacePage from '@/pages/WorkspacePage';
+import React from 'react';
+
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
+  constructor(props: any) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ color: 'white', padding: '2rem', backgroundColor: '#990000', minHeight: '100vh', fontFamily: 'monospace' }}>
+          <h2>Workspace Crashed</h2>
+          <pre>{this.state.error.message}</pre>
+          <pre style={{ marginTop: '1rem', whiteSpace: 'pre-wrap' }}>{this.state.error.stack}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isInitializing = useAuthStore((state) => state.isInitializing);
   const user = useAuthStore((state) => state.user);
+
+  // Wait for Supabase session check to complete before redirecting
+  // CRITICAL FIX: If we just returned from OAuth, the URL will have a hash with tokens.
+  // We MUST wait for Supabase to parse it, even if isInitializing is briefly false.
+  const hasAuthHash = window.location.hash.includes('access_token=') || window.location.hash.includes('error=');
+
+  if (isInitializing || hasAuthHash) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-[var(--bg-canvas)]">
+        <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -33,7 +65,18 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 
 function OnboardingRoute({ children }: { children: ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isInitializing = useAuthStore((state) => state.isInitializing);
   const user = useAuthStore((state) => state.user);
+
+  const hasAuthHash = window.location.hash.includes('access_token=') || window.location.hash.includes('error=');
+
+  if (isInitializing || hasAuthHash) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-[var(--bg-canvas)]">
+        <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -61,17 +104,6 @@ function App() {
   useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
-
-  // Clean up legacy mock projects (IDs: 1, 2, 3, 4)
-  const { projects, deleteProject } = useProjectStore();
-  useEffect(() => {
-    const mockIds = ['1', '2', '3', '4'];
-    projects.forEach(p => {
-      if (mockIds.includes(p.id)) {
-        deleteProject(p.id);
-      }
-    });
-  }, [projects, deleteProject]);
 
   return (
     <Router>
@@ -103,6 +135,14 @@ function App() {
           }
         />
         <Route
+          path="/deployments"
+          element={
+            <ProtectedRoute>
+              <DeploymentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/profile"
           element={
             <ProtectedRoute>
@@ -126,7 +166,9 @@ function App() {
           path="/workspace/:projectId"
           element={
             <ProtectedRoute>
-              <WorkspacePage />
+              <ErrorBoundary>
+                <WorkspacePage />
+              </ErrorBoundary>
             </ProtectedRoute>
           }
         />

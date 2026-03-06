@@ -50,9 +50,11 @@ export default function ContextObserver() {
         // Skip if already analyzed this exact content
         if (lastAnalyzed.current[currentFile.id] === debouncedContent) return;
 
-        // Simple heuristic: Only analyze if file is > 50 chars and has "error" or "TODO" or just randomly for "proactive" demo
-        // For this task, we'll monitor for syntax-like issues or "TODOs"
-        const shouldAnalyze = debouncedContent.includes('TODO') || debouncedContent.includes('FIXME') || debouncedContent.length > 100;
+        // Only analyze meaningful files: must be > 200 chars AND contain known signals
+        // Keeps background AI calls minimal to stay within API rate limits
+        const MIN_CHARS = 200;
+        const hasSignal = debouncedContent.includes('TODO') || debouncedContent.includes('FIXME');
+        const shouldAnalyze = hasSignal && debouncedContent.length > MIN_CHARS;
 
         if (shouldAnalyze) {
             console.log("ContextObserver: Proactively analyzing...", currentFile.name);

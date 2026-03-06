@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Box, LayoutTemplate, Github } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useProjectStore } from '@/stores/useProjectStore';
+import { useToastStore } from '@/stores/useToastStore';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
@@ -16,7 +17,8 @@ type ProjectType = 'blank' | 'template' | 'import';
 export default function NewProjectModal({ isOpen, onClose }: NewProjectModalProps) {
     if (!isOpen) return null;
 
-    const { addProject } = useProjectStore();
+    const { createProjectAPI } = useProjectStore();
+    const { addToast } = useToastStore();
     const [step, setStep] = useState<Step>('select-type');
 
     // Form State
@@ -38,25 +40,22 @@ export default function NewProjectModal({ isOpen, onClose }: NewProjectModalProp
 
         setIsCreating(true);
 
-        // Simulate extraction/creation delay
-        setTimeout(() => {
-            addProject({
-                name,
-                description,
-                language: 'Plain Text', // Default until extraction
-                techStack: [], // To be extracted later
-                fullDescription: description,
-                features: ['Initialized Project'],
-                architecture: 'Empty Project',
-                fileStructure: '/src'
-            });
-            setIsCreating(false);
+        try {
+            await createProjectAPI(name, description);
+            addToast(`Project "${name}" created successfully!`, 'success');
             onClose();
             // Reset state
             setStep('select-type');
             setName('');
             setDescription('');
-        }, 1000);
+        } catch (error: unknown) {
+            const message = error && typeof error === 'object' && 'message' in error
+                ? (error as { message: string }).message
+                : 'Failed to create project';
+            addToast(message, 'error');
+        } finally {
+            setIsCreating(false);
+        }
     };
 
     const projectTypes = [

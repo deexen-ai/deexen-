@@ -7,6 +7,7 @@ import { Check, User, Briefcase, Code, Coffee, Globe, Moon, Sun, ArrowRight, Arr
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useLayoutStore } from '@/stores/useLayoutStore';
+import { getRandomQuestions, type Question } from '@/data/quizQuestions';
 
 // Helper for conditional classes
 function cn(...inputs: (string | undefined | null | false)[]) {
@@ -28,39 +29,14 @@ const SKILL_LEVELS = [
     { id: 'quiz', label: 'Take a Quiz', icon: HelpCircle, description: 'Not sure? Let AI decide for you.' }
 ];
 
-const QUIZ_QUESTIONS = [
-    {
-        question: "What is the output of `console.log(typeof [])` in JavaScript?",
-        options: ["array", "object", "undefined", "list"],
-        correct: 1 // object
-    },
-    {
-        question: "Which hook is used for side effects in React?",
-        options: ["useState", "useEffect", "useContext", "useReducer"],
-        correct: 1 // useEffect
-    },
-    {
-        question: "What does the 'prop drilling' problem refer to?",
-        options: ["Passing data through too many layers", "Using incorrect prop types", "Drilling holes in components", "Database query optimization"],
-        correct: 0 // Passing data...
-    },
-    {
-        question: "What is the primary purpose of TypeScript?",
-        options: ["To run code faster", "To add static typing to JavaScript", "To replace JavaScript entirely", "To style components"],
-        correct: 1 // To add static typing...
-    },
-    {
-        question: "Which CSS method allows for responsive design?",
-        options: ["Media Queries", "Flexbox", "Grid", "All of the above"],
-        correct: 3 // All of the above
-    }
-];
+
 
 export default function OnboardingPage() {
     const [step, setStep] = useState(1);
     const [selectedRole, setSelectedRole] = useState('');
     const [selectedSkillLevel, setSelectedSkillLevel] = useState<'beginner' | 'intermediate' | 'advanced' | ''>('');
     const [showQuiz, setShowQuiz] = useState(false);
+    const [currentQuestions, setCurrentQuestions] = useState<Question[]>([]);
     const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
     const [quizScore, setQuizScore] = useState<number | null>(null);
 
@@ -105,25 +81,26 @@ export default function OnboardingPage() {
         setQuizAnswers(newAnswers);
 
         // Auto-advance or finish
-        if (newAnswers.filter(a => a !== undefined).length === QUIZ_QUESTIONS.length) {
+        if (newAnswers.filter(a => a !== undefined).length === currentQuestions.length) {
             // Calculate score
             let score = 0;
             newAnswers.forEach((ans, idx) => {
-                if (ans === QUIZ_QUESTIONS[idx].correct) score++;
+                if (ans === currentQuestions[idx].correct) score++;
             });
             setQuizScore(score);
 
             // Assign level based on score
-            // 0-2: Beginner
-            // 3-4: Intermediate
-            // 5: Advanced
+            // 0-1: Beginner
+            // 2-3: Intermediate
+            // 4-5: Advanced
             let level: 'beginner' | 'intermediate' | 'advanced' = 'beginner';
-            if (score >= 3) level = 'intermediate';
-            if (score === 5) level = 'advanced';
+            if (score >= 2) level = 'intermediate';
+            if (score >= 4) level = 'advanced';
 
             setTimeout(() => {
                 setSelectedSkillLevel(level);
                 setShowQuiz(false);
+                setCurrentQuestions([]); // Reset
             }, 1500); // Show score briefly
         }
     };
@@ -270,6 +247,8 @@ export default function OnboardingPage() {
                                     key={level.id}
                                     onClick={() => {
                                         if (isQuiz) {
+                                            const questions = getRandomQuestions(5);
+                                            setCurrentQuestions(questions);
                                             setShowQuiz(true);
                                             setQuizAnswers([]);
                                             setQuizScore(null);
@@ -317,13 +296,13 @@ export default function OnboardingPage() {
                         {quizScore === null ? (
                             <div className="space-y-6">
                                 <div className="flex justify-between items-center mb-4">
-                                    <h3 className="font-medium text-lg">Coding Assessment</h3>
+                                    <h3 className="font-medium text-lg text-[var(--text-primary)]">Coding Assessment</h3>
                                     <span className="text-sm text-[var(--text-secondary)]">
-                                        {quizAnswers.filter(a => a !== undefined).length} / {QUIZ_QUESTIONS.length}
+                                        {quizAnswers.filter(a => a !== undefined).length} / {currentQuestions.length}
                                     </span>
                                 </div>
-                                {QUIZ_QUESTIONS.map((q, qIdx) => (
-                                    <div key={qIdx} className="space-y-3">
+                                {currentQuestions.map((q, qIdx) => (
+                                    <div key={qIdx} className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
                                         <p className="font-medium text-[var(--text-primary)]">{qIdx + 1}. {q.question}</p>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                             {q.options.map((opt, oIdx) => (
@@ -331,10 +310,10 @@ export default function OnboardingPage() {
                                                     key={oIdx}
                                                     onClick={() => handleQuizOptionSelect(qIdx, oIdx)}
                                                     className={cn(
-                                                        "px-4 py-2 text-sm rounded-lg border text-left transition-colors",
+                                                        "px-4 py-2 text-sm rounded-lg border text-left transition-all duration-200",
                                                         quizAnswers[qIdx] === oIdx
-                                                            ? "bg-orange-500 text-white border-orange-500"
-                                                            : "border-[var(--border-default)] hover:bg-[var(--bg-canvas)]"
+                                                            ? "bg-orange-500 text-white border-orange-500 shadow-md scale-[1.02]"
+                                                            : "border-[var(--border-default)] hover:bg-[var(--bg-canvas)] hover:border-orange-500/30"
                                                     )}
                                                 >
                                                     {opt}
@@ -347,8 +326,11 @@ export default function OnboardingPage() {
                         ) : (
                             <div className="text-center py-8">
                                 <Brain className="w-12 h-12 text-orange-500 mx-auto mb-4 animate-bounce" />
-                                <h3 className="text-xl font-bold mb-2">Analyzing...</h3>
-                                <p className="text-[var(--text-secondary)]">Score: {quizScore}/{QUIZ_QUESTIONS.length}</p>
+                                <h3 className="text-xl font-bold mb-2 text-[var(--text-primary)]">Analyzing Results...</h3>
+                                <p className="text-[var(--text-secondary)]">Score: {quizScore}/{currentQuestions.length}</p>
+                                <div className="mt-4 h-1 w-24 bg-orange-500/20 rounded-full mx-auto overflow-hidden">
+                                    <div className="h-full bg-orange-500 animate-[progress_1.5s_ease-in-out]" style={{ width: '100%' }} />
+                                </div>
                             </div>
                         )}
                     </div>

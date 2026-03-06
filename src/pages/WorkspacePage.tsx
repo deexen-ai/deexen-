@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileCode, Search, GitBranch, Settings, ArrowLeft, Puzzle, Blocks, Sparkles } from 'lucide-react';
+import { FileCode, Search, GitBranch, Settings, ArrowLeft, Puzzle, Blocks, Activity, Sparkles } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 
@@ -11,6 +11,10 @@ import CodeEditor from '@/components/editor/CodeEditor';
 import { runWorkspaceTour } from '@/services/tourService';
 import Terminal from '@/components/terminal/Terminal';
 import AIPanel from '@/components/ai-panel/AIPanel';
+import SourceControl from '@/components/source-control/SourceControl';
+import { SidebarExtensionList } from '@/components/marketplace/SidebarExtensionList';
+import { ExtensionDetailView } from '@/components/marketplace/ExtensionDetailView';
+import { usePluginStore } from '@/stores/usePluginStore';
 
 // Activity Bar Component
 // ActivityBar Component
@@ -53,8 +57,17 @@ const ActivityBar = ({ activeView, onIconClick }: ActivityBarProps) => {
 
             <button
                 title="Settings"
-                className="w-10 h-10 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                onClick={() => onIconClick('settings')}
+                className={cn(
+                    "w-10 h-10 flex items-center justify-center relative transition-colors",
+                    activeView === 'settings'
+                        ? "text-[var(--text-primary)]"
+                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                )}
             >
+                {activeView === 'settings' && (
+                    <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-orange-500" />
+                )}
                 <Settings className="w-5 h-5" />
             </button>
         </div>
@@ -69,13 +82,16 @@ export default function WorkspacePage() {
     const [terminalHeight, setTerminalHeight] = useState(200);
     const [isDragging, setIsDragging] = useState<'left' | 'right' | 'terminal' | null>(null);
 
-    const { isSidebarOpen, setSidebarOpen, toggleSidebar, isTerminalOpen, toggleTerminal, toggleAIPanel, isAIPanelOpen } = useLayoutStore();
+    const { isSidebarOpen, setSidebarOpen, toggleSidebar, isTerminalOpen, toggleTerminal, isTerminalMaximized, toggleAIPanel, isAIPanelOpen } = useLayoutStore();
 
     const { projectId } = useParams();
     const { projects } = useProjectStore();
 
     const { activeFileId, projectName, setFiles, setProjectName } = useFileStore();
     const files = useFileStore(state => state.files); // Selector for persistence/updates
+
+    // Extension Store
+    const activeExtensionDetail = usePluginStore(state => state.activeExtensionDetail);
 
     const handleIconClick = (viewId: string) => {
         if (activeSidebarView === viewId) {
@@ -112,16 +128,19 @@ export default function WorkspacePage() {
                         isOpen: true,
                         children: [
                             {
-                                id: 'src',
-                                name: 'src',
+                                id: 'project',
+                                name: 'project',
                                 type: 'folder',
                                 isOpen: true,
                                 children: [
-                                    { id: 'App.tsx', name: 'App.tsx', type: 'file', content: '// ' + project.name }
+                                    {
+                                        id: 'document.txt',
+                                        name: 'document.txt',
+                                        type: 'file',
+                                        content: project.description || `Welcome to your new blank project: ${project.name}`
+                                    }
                                 ]
-                            },
-                            { id: 'package.json', name: 'package.json', type: 'file', content: '{}' },
-                            { id: 'README.md', name: 'README.md', type: 'file', content: '# ' + project.name }
+                            }
                         ]
                     }
                 ];
@@ -184,7 +203,7 @@ export default function WorkspacePage() {
             isDragging && "cursor-grabbing select-none"
         )}>
             {/* Title Bar */}
-            <div className="h-8 bg-[var(--bg-canvas)] border-b border-[var(--border-default)] flex items-center px-3 text-xs select-none">
+            <div className="h-8 bg-[var(--bg-canvas)] border-b border-[var(--border-default)] flex items-center px-3 text-xs select-none z-10">
                 <div
                     id="back-to-dashboard-btn"
                     className="flex items-center space-x-2 cursor-pointer hover:text-[var(--text-primary)] transition-colors text-[var(--text-secondary)]"
@@ -268,7 +287,7 @@ export default function WorkspacePage() {
                 {isSidebarOpen && (
                     <div
                         style={{ width: leftPanelWidth }}
-                        className="flex-shrink-0 flex flex-col bg-[var(--bg-surface)] border-r border-[var(--border-default)] relative"
+                        className="flex-shrink-0 flex flex-col bg-[var(--bg-surface)] border-r border-[var(--border-default)] relative z-10"
                     >
                         {/* Sidebar Header */}
                         <div className="h-9 flex items-center px-4 text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider border-b border-[var(--border-default)]">
@@ -276,6 +295,7 @@ export default function WorkspacePage() {
                             {activeSidebarView === 'search' && 'Search'}
                             {activeSidebarView === 'git' && 'Source Control'}
                             {activeSidebarView === 'extensions' && 'Extensions'}
+                            {activeSidebarView === 'settings' && 'Project Settings'}
                         </div>
 
                         {/* Sidebar Content */}
@@ -294,15 +314,18 @@ export default function WorkspacePage() {
                                 </div>
                             )}
                             {activeSidebarView === 'git' && (
-                                <div className="p-4 text-sm text-[var(--text-secondary)] flex flex-col items-center justify-center h-full">
-                                    <GitBranch className="w-8 h-8 mb-2 opacity-30" />
-                                    <span>No changes</span>
+                                <div className="h-full flex flex-col">
+                                    <SourceControl />
                                 </div>
                             )}
                             {activeSidebarView === 'extensions' && (
-                                <div className="p-4 text-sm text-[var(--text-secondary)] flex flex-col items-center justify-center h-full">
-                                    <Blocks className="w-8 h-8 mb-2 opacity-30" />
-                                    <span>Marketplace coming soon</span>
+                                <div className="h-full flex flex-col">
+                                    <SidebarExtensionList />
+                                </div>
+                            )}
+                            {activeSidebarView === 'settings' && (
+                                <div className="p-4 space-y-6 animate-in fade-in slide-in-from-left-2 duration-300">
+                                    <ProjectSettingsPanel project={projects.find(p => p.id === projectId)} />
                                 </div>
                             )}
                         </div>
@@ -316,46 +339,34 @@ export default function WorkspacePage() {
                 )}
 
                 {/* Main Editor Area */}
-                <div id="editor-pane" className="flex-1 flex flex-col min-w-0 bg-[#1e1e1e]">
-                    {/* Editor Header / Tabs */}
-                    <div className="h-9 bg-[#2d2d2d] flex items-center px-4 border-b border-[#1e1e1e] justify-between">
-                        <span className="text-sm text-gray-300">{activeFilePath}</span>
-                        <div className="flex items-center space-x-2">
-                            <button
-                                id="run-project-btn"
-                                className="p-1 hover:bg-[#3d3d3d] rounded text-green-500" title="Run Project">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </button>
-                            <button
-                                id="ai-panel-toggle"
-                                onClick={toggleAIPanel}
-                                className={cn("p-1 hover:bg-[#3d3d3d] rounded transition-colors", isAIPanelOpen ? "text-orange-500" : "text-gray-400")}
-                                title="Toggle AI Panel"
-                            >
-                                <Sparkles className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
+                <div id="editor-pane" className="flex-1 flex flex-col min-w-0 bg-[#1e1e1e] relative">
+                    {/* Editor Header / Tabs removed to prevent duplicate bars */}
 
-                    {/* Editor */}
-                    <div className="flex-1 min-h-0 bg-[var(--bg-canvas)]">
-                        <CodeEditor />
+                    {/* Editor or Extension Details */}
+                    <div className="flex-1 min-h-0 flex flex-col relative bg-[var(--bg-canvas)]">
+                        {activeExtensionDetail ? (
+                            <ExtensionDetailView />
+                        ) : (
+                            <CodeEditor />
+                        )}
                     </div>
 
                     {/* Terminal Resize Handle */}
-                    {isTerminalOpen && (
+                    {isTerminalOpen && !isTerminalMaximized && (
                         <div
-                            className="h-1 bg-[var(--bg-surface)] cursor-row-resize hover:bg-orange-500/50 transition-colors"
+                            className="h-1 bg-[var(--bg-surface)] cursor-row-resize hover:bg-orange-500/50 transition-colors z-20 relative"
                             onMouseDown={startResize('terminal')}
                         />
                     )}
 
                     {/* Terminal */}
                     {isTerminalOpen && (
-                        <div style={{ height: terminalHeight }} className="flex-shrink-0 bg-[var(--bg-canvas)] border-t border-[var(--border-default)]">
+                        <div
+                            style={isTerminalMaximized ? {} : { height: terminalHeight }}
+                            className={cn(
+                                "flex-shrink-0 bg-[var(--bg-canvas)] border-t border-[var(--border-default)] z-30",
+                                isTerminalMaximized && "absolute inset-0"
+                            )}>
                             <Terminal />
                         </div>
                     )}
@@ -389,6 +400,71 @@ export default function WorkspacePage() {
                     <span>UTF-8</span>
                     <span>TypeScript React</span>
                     <span className="text-orange-500">● AI Active</span>
+                </div>
+            </div>
+        </div>
+    );
+}
+// Project Settings Panel Component
+function ProjectSettingsPanel({ project }: { project: any }) {
+    if (!project) return null;
+
+    const sections = [
+        { label: 'Name', value: project.name, icon: FileCode },
+        { label: 'Status', value: project.status || 'Development', icon: Activity },
+        { label: 'Main Branch', value: project.branch || 'main', icon: GitBranch },
+        { label: 'Language', value: project.language, icon: Blocks },
+    ];
+
+    return (
+        <div className="space-y-6">
+            <div className="flex flex-col items-center text-center pb-2 border-b border-[var(--border-muted)]">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center mb-4 shadow-lg shadow-orange-500/20 text-white">
+                    <span className="text-2xl font-bold">{project.name.charAt(0).toUpperCase()}</span>
+                </div>
+                <h3 className="font-display font-bold text-[var(--text-primary)] text-lg leading-tight">{project.name}</h3>
+                <p className="text-xs text-[var(--text-tertiary)] mt-1 tracking-wide uppercase font-medium">Project ID: {project.id.slice(0, 8)}</p>
+            </div>
+
+            <div className="space-y-4">
+                {sections.map((section, i) => (
+                    <div key={i} className="group">
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <section.icon className="w-3.5 h-3.5 text-orange-500" />
+                            <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--text-tertiary)]">{section.label}</span>
+                        </div>
+                        <div className="px-3 py-2 bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-lg text-sm text-[var(--text-primary)] font-medium group-hover:border-orange-500/30 transition-colors">
+                            {section.value}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="pt-2">
+                <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-3.5 h-3.5 text-violet-500" />
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--text-tertiary)]">Description</span>
+                </div>
+                <div className="p-3 bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs text-[var(--text-secondary)] leading-relaxed italic">
+                    {project.description || 'No description provided for this workspace.'}
+                </div>
+            </div>
+
+            <div className="pt-2">
+                <div className="flex items-center gap-2 mb-3">
+                    <Puzzle className="w-3.5 h-3.5 text-blue-500" />
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--text-tertiary)]">Tech Stack</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {project.techStack?.length ? (
+                        project.techStack.map((tech: string) => (
+                            <span key={tech} className="px-2 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 rounded text-[10px] font-medium">
+                                {tech}
+                            </span>
+                        ))
+                    ) : (
+                        <span className="text-[10px] text-[var(--text-tertiary)] italic">Auto-detecting...</span>
+                    )}
                 </div>
             </div>
         </div>

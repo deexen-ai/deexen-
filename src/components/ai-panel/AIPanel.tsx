@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Plus, Mic, ChevronUp, Image, FileText, AtSign, ThumbsUp, ThumbsDown, Copy, Check } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useAIStore } from '@/stores/useAIStore';
-import { useAuthStore } from '@/stores/useAuthStore';
 import { MODE_CONFIG, AI_MODES } from '@/config/aiModes';
 import type { AIMode } from '@/config/aiModes';
 import { aiService } from '@/services/aiService';
@@ -108,12 +107,8 @@ export default function AIPanel() {
         setError(null);
 
         try {
-            // Get user skill level
-            const user = useAuthStore.getState().user;
-            const skillLevel = user?.skillLevel || 'intermediate';
-
-            // Use mock for demo
-            const result = await aiService.mockAnalyze(selectedMode, code, skillLevel);
+            // Call real AI backend API
+            const result = await aiService.analyze(selectedMode, code);
 
             const responseData = {
                 mode: selectedMode,
@@ -146,12 +141,12 @@ export default function AIPanel() {
     };
 
     return (
-        <div className="h-full flex flex-col bg-[var(--bg-surface)]">
+        <div className="h-full flex flex-col bg-transparent backdrop-blur-3xl relative z-10">
             {/* Header */}
-            <div className="h-10 flex items-center justify-between px-4 border-b border-[var(--border-default)] flex-shrink-0">
-                <div className="flex items-center space-x-2">
-                    <img src="/deexenlogo.png" alt="Deexen AI" className="h-5" />
-                    <span className="text-xs font-medium text-[var(--text-primary)]">AI</span>
+            <div className="h-12 flex items-center justify-between px-5 border-b border-[rgba(255,255,255,0.04)] flex-shrink-0">
+                <div className="flex items-center space-x-3 group cursor-pointer">
+                    <img src="/deexenlogo.png" alt="Deexen AI" className="h-5 opacity-90 group-hover:scale-110 transition-transform duration-500 ease-out" />
+                    <span className="text-[13px] font-medium text-[var(--text-primary)] tracking-wide">Deexen AI Assistant</span>
                 </div>
             </div>
 
@@ -249,7 +244,7 @@ export default function AIPanel() {
             </div>
 
             {/* Input Area */}
-            <div className="border-t border-[var(--border-default)] flex-shrink-0">
+            <div className="border-t border-[rgba(255,255,255,0.04)] flex-shrink-0 bg-[rgba(0,0,0,0.1)] pb-2 backdrop-blur-md">
                 {/* Text Input */}
                 <div className="p-3">
                     <div className="relative">
@@ -260,38 +255,41 @@ export default function AIPanel() {
                             onKeyDown={handleKeyDown}
                             placeholder="Ask anything (Ctrl+L), @ to mention, / for workflows"
                             rows={2}
-                            className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-lg px-3 py-2 pr-20 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-neutral-700 resize-none"
+                            className="w-full bg-[rgba(0,0,0,0.2)] border border-[rgba(255,255,255,0.06)] rounded-xl px-4 py-3 pr-20 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-sercondary)] placeholder:opacity-50 focus:outline-none focus:border-white/10 focus:ring-1 focus:ring-white/5 resize-none transition-all duration-300 backdrop-blur-sm"
                         />
-                        <div className="absolute right-2 bottom-2 flex items-center space-x-1">
-                            <button className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
-                                <Mic className="w-4 h-4" />
+                        <div className="absolute right-2 bottom-2 flex items-center space-x-1.5">
+                            <button className="p-1.5 text-[var(--text-secondary)] hover:text-white transition-colors group">
+                                <Mic className="w-4 h-4 group-hover:scale-110 transition-transform duration-500" />
                             </button>
                             <button
                                 onClick={handleAnalyze}
                                 disabled={isLoading}
                                 className={cn(
-                                    "p-1.5 rounded transition-colors",
+                                    "p-1.5 rounded-lg transition-all duration-500 group",
                                     !isLoading
-                                        ? "bg-orange-500 text-white hover:bg-orange-600"
+                                        ? "bg-white/5 hover:bg-white/10 text-white border border-white/10"
                                         : "bg-[var(--bg-surface-hover)] text-[var(--text-secondary)]"
                                 )}
                             >
-                                <Send className="w-4 h-4" />
+                                <Send className="w-4 h-4 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform duration-500" />
                             </button>
                         </div>
                     </div>
                 </div>
 
-                {/* Action Button */}
-                <div className="px-3 pb-2">
+                <div className="px-3 pb-3">
                     <button
                         onClick={handleAnalyze}
                         disabled={isLoading}
                         className={cn(
-                            "w-full py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2",
-                            isLoading ? "bg-[var(--bg-surface-hover)] text-[var(--text-secondary)]" : "text-white hover:opacity-90"
+                            "w-full py-2.5 rounded-xl text-[13px] font-medium transition-all duration-500 flex items-center justify-center space-x-2 border shadow-sm hover:shadow-lg backdrop-blur-md group",
+                            isLoading ? "bg-[rgba(255,255,255,0.02)] text-[var(--text-secondary)] border-transparent" : "hover:border-opacity-50"
                         )}
-                        style={{ backgroundColor: isLoading ? undefined : config.color }}
+                        style={{
+                            backgroundColor: isLoading ? undefined : `${config.color}15`,
+                            color: isLoading ? undefined : config.color,
+                            borderColor: isLoading ? undefined : `${config.color}30`
+                        }}
                     >
                         {isLoading ? (
                             <>
@@ -299,7 +297,7 @@ export default function AIPanel() {
                                 <span>Processing...</span>
                             </>
                         ) : (
-                            <span>{config.buttonText}</span>
+                            <span className="group-hover:tracking-wide transition-all duration-500">{config.buttonText}</span>
                         )}
                     </button>
                 </div>

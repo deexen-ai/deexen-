@@ -1,136 +1,252 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, ChevronDown, MoreHorizontal, Maximize, Minimize2, X, TerminalSquare, AlertTriangle, Trash2 } from 'lucide-react';
 import { cn } from '@/utils/cn';
-
-interface TerminalLine {
-    id: number;
-    content: React.ReactNode;
-}
+import { useLayoutStore } from '@/stores/useLayoutStore';
+import { useTerminalStore } from '@/stores/useTerminalStore';
+import { Terminal as XTerm } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
+import 'xterm/css/xterm.css';
 
 export default function Terminal() {
-    const [activeTab, setActiveTab] = useState<'terminal' | 'output' | 'problems'>('terminal');
-    const [history, setHistory] = useState<TerminalLine[]>([
-        { id: 1, content: <span className="text-[var(--text-secondary)]">Welcome to Deexen Terminal</span> },
-    ]);
-    const [input, setInput] = useState('');
-    const inputRef = useRef<HTMLInputElement>(null);
-    const bottomRef = useRef<HTMLDivElement>(null);
+    const [activeTab, setActiveTab] = useState<'Problems' | 'Output' | 'Debug Console' | 'Terminal' | 'Ports'>('Terminal');
+    const { setTerminalOpen, toggleTerminalMaximized, isTerminalMaximized } = useLayoutStore();
+    const {
+        sessions,
+        activeSessionId,
+        addSession,
+        deleteActiveSession,
+        setActiveSession,
+        connect,
+        disconnect,
+        socket,
+        sendInput,
+        resizeTerminal
+    } = useTerminalStore();
 
+    const terminalRef = useRef<HTMLDivElement>(null);
+    const xtermRef = useRef<XTerm | null>(null);
+    const fitAddonRef = useRef<FitAddon | null>(null);
+
+    // Initialize Store Connection
     useEffect(() => {
-        if (activeTab === 'terminal') {
-            bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }
-    }, [history, activeTab]);
+        connect();
+        return () => disconnect();
+    }, []);
 
-    const handleCommand = (cmd: string) => {
-        const newHistory = [...history, { id: Date.now(), content: <span><span className="text-orange-500">$</span> <span className="text-[var(--text-primary)]">{cmd}</span></span> }];
-        const lowerCmd = cmd.trim().toLowerCase();
+    // Initialize XTerm
+    useEffect(() => {
+        if (!terminalRef.current || activeTab !== 'Terminal') return;
 
-        let response: React.ReactNode = null;
+        const term = new XTerm({
+            cursorBlink: true,
+            fontSize: 13,
+            fontFamily: 'JetBrains Mono, Menlo, Monaco, "Courier New", monospace',
+            theme: {
+                background: '#181818',
+                foreground: '#cccccc',
+                cursor: '#cccccc',
+                selectionBackground: '#ffffff33',
+            },
+            allowProposedApi: true
+        });
 
-        if (lowerCmd === 'help') {
-            response = (
-                <div className="flex flex-col text-[var(--text-secondary)] pl-2">
-                    <span>ls      - List files</span>
-                    <span>clear   - Clear terminal</span>
-                    <span>npm run - Execute scripts</span>
-                </div>
-            );
-        } else if (lowerCmd === 'ls') {
-            response = (
-                <div className="flex gap-4 text-[var(--text-secondary)] pl-2">
-                    <span>src/</span>
-                    <span>public/</span>
-                    <span>package.json</span>
-                </div>
-            );
-        } else if (lowerCmd === 'clear') {
-            setHistory([]);
-            return;
-        } else if (lowerCmd === '') {
-            // empty
-        } else {
-            response = <span className="text-red-400 pl-2">Command not found: {cmd}</span>;
-        }
+        const fitAddon = new FitAddon();
+        term.loadAddon(fitAddon);
+        term.open(terminalRef.current);
+        fitAddon.fit();
 
-        if (response) {
-            newHistory.push({ id: Date.now() + 1, content: response });
-        }
-        setHistory(newHistory);
+        term.onData(data => {
+            sendInput(data);
+        });
+
+        term.onResize(size => {
+            resizeTerminal(size.cols, size.rows);
+        });
+
+        xtermRef.current = term;
+        fitAddonRef.current = fitAddon;
+
+        // Write any buffered data if needed (optional)
+
+        return () => {
+            term.dispose();
+            xtermRef.current = null;
+        };
+    }, [activeTab]); // Re-initialize when switching back to Terminal tab
+
+    // Handle incoming data
+    useEffect(() => {
+        if (!socket || !xtermRef.current) return;
+
+        const handleData = (data: string) => {
+            xtermRef.current?.write(data);
+        };
+
+        socket.on('terminal.data', handleData);
+        return () => {
+            socket.off('terminal.data', handleData);
+        };
+    }, [socket, activeTab]);
+
+    // Handle resize on panel change
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            fitAddonRef.current?.fit();
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [isTerminalMaximized, activeTab]);
+
+    const handleAddSession = () => {
+        addSession('terminal');
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            handleCommand(input);
-            setInput('');
-        }
+    const handleDeleteSession = () => {
+        deleteActiveSession();
     };
 
     return (
-        <div
-            className="h-full bg-[var(--bg-canvas)] flex flex-col font-mono text-xs overflow-hidden"
-            onClick={() => activeTab === 'terminal' && inputRef.current?.focus()}
-        >
-            {/* Tabs */}
-            <div className="h-9 px-2 flex items-center border-b border-[var(--border-default)] bg-[var(--bg-surface)] flex-shrink-0 select-none gap-1">
-                {['terminal', 'output', 'problems'].map((tab) => (
+        <div className="h-full bg-[#181818] flex flex-col font-mono text-[13px] overflow-hidden text-[#cccccc]">
+            {/* Tabs Header */}
+            <div className="h-9 px-4 flex items-center flex-shrink-0 select-none gap-4 border-b border-[#2b2b2b]">
+                {['Problems', 'Output', 'Debug Console', 'Terminal', 'Ports'].map((tab) => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab as any)}
                         className={cn(
-                            "px-3 h-7 text-xs capitalize transition-colors rounded",
+                            "h-full relative flex items-center transition-colors pb-[2px]",
                             activeTab === tab
-                                ? "bg-[var(--bg-surface-hover)] text-[var(--text-primary)]"
-                                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                                ? "text-[#e7e7e7]"
+                                : "text-[#8c8c8c] hover:text-[#e7e7e7]"
                         )}
                     >
                         {tab}
-                        {tab === 'problems' && <span className="ml-1.5 text-[var(--text-secondary)]">0</span>}
+                        {activeTab === tab && (
+                            <div className="absolute bottom-[-1px] left-0 right-0 h-[1px] bg-[#007acc]" />
+                        )}
                     </button>
                 ))}
+
                 <div className="flex-1" />
-                <button className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
-                    <Plus className="h-3.5 w-3.5" />
-                </button>
+
+                {/* Right controls */}
+                <div className="flex items-center gap-[2px] text-[#cccccc]">
+                    <div
+                        className="flex items-center hover:bg-[#ffffff1a] rounded cursor-pointer px-1 py-0.5"
+                        onClick={handleAddSession}
+                        title="Add Terminal"
+                    >
+                        <Plus className="h-[14px] w-[14px]" />
+                        <ChevronDown className="h-3 w-3 ml-[2px]" />
+                    </div>
+                    {sessions.length > 0 && (
+                        <div
+                            className="hover:bg-[#ffffff1a] rounded cursor-pointer p-[3px] ml-1"
+                            onClick={handleDeleteSession}
+                            title="Kill Terminal"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </div>
+                    )}
+                    <div className="hover:bg-[#ffffff1a] rounded cursor-pointer p-[3px] ml-1">
+                        <MoreHorizontal className="h-4 w-4" />
+                    </div>
+                    <div className="w-[1px] h-3 bg-[#4d4d4d] mx-2" />
+                    <div
+                        className="hover:bg-[#ffffff1a] rounded cursor-pointer p-[3px]"
+                        onClick={toggleTerminalMaximized}
+                        title={isTerminalMaximized ? "Restore Panel Size" : "Maximize Panel Size"}
+                    >
+                        {isTerminalMaximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize className="h-3.5 w-3.5" />}
+                    </div>
+                    <div
+                        className="hover:bg-[#ffffff1a] rounded cursor-pointer p-[3px]"
+                        onClick={() => setTerminalOpen(false)}
+                        title="Close Panel"
+                    >
+                        <X className="h-4 w-4" />
+                    </div>
+                </div>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 p-3 overflow-y-auto cursor-text text-[var(--text-primary)]">
-                {activeTab === 'terminal' && (
+            {/* Content Area */}
+            <div className="flex-1 flex overflow-hidden">
+                {activeTab === 'Terminal' ? (
                     <>
-                        {history.map((line) => (
-                            <div key={line.id} className="mb-1 leading-relaxed">
-                                {line.content}
-                            </div>
-                        ))}
-                        <div className="flex items-center">
-                            <span className="text-orange-500 mr-1">$</span>
-                            <span className="text-green-500 mr-1">deexen</span>
-                            <span className="text-[var(--text-secondary)] mr-2">main</span>
-                            <input
-                                ref={inputRef}
-                                type="text"
-                                className="bg-transparent border-none outline-none text-[var(--text-primary)] flex-1 caret-orange-500"
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                autoFocus
+                        {/* Main Terminal View */}
+                        <div className="flex-1 h-full relative overflow-hidden">
+                            <div
+                                ref={terminalRef}
+                                className="absolute inset-0 p-3 xterm-container"
                             />
                         </div>
-                        <div ref={bottomRef} />
+
+                        {/* Right Sidebar (Terminal Sessions) */}
+                        <div className="w-[160px] shrink-0 border-l border-[#2b2b2b] flex flex-col py-1 select-none">
+                            {sessions.map(session => (
+                                <div
+                                    key={session.id}
+                                    className={cn(
+                                        "px-3 py-[2px] flex items-center gap-2 cursor-pointer group",
+                                        activeSessionId === session.id ? "bg-[#37373d]" : "hover:bg-[#2a2d2e]"
+                                    )}
+                                    onClick={() => setActiveSession(session.id)}
+                                >
+                                    <TerminalSquare className="h-[14px] w-[14px] text-[#cccccc]" />
+                                    <span className={cn(
+                                        "flex-1 truncate text-[12px] pt-[1px]",
+                                        activeSessionId === session.id ? "text-white" : "text-[#cccccc]"
+                                    )}>
+                                        {session.name}
+                                    </span>
+                                    {session.hasWarning && (
+                                        <AlertTriangle className="h-[13px] w-[13px] text-[#cca700]" />
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     </>
-                )}
-
-                {activeTab === 'output' && (
-                    <div className="text-[var(--text-secondary)]">
-                        [info] Language server initialized<br />
-                        [info] 2 extensions loaded
+                ) : activeTab === 'Problems' ? (
+                    <div className="flex-1 flex flex-col p-4 overflow-auto">
+                        <div className="flex items-center gap-2 text-[#8c8c8c] mb-4">
+                            <span className="font-bold">0</span> Problems
+                        </div>
+                        <div className="text-[12px] text-[#8c8c8c] italic">
+                            No problems have been detected in the workspace so far.
+                        </div>
                     </div>
-                )}
-
-                {activeTab === 'problems' && (
-                    <div className="flex items-center justify-center h-full text-[var(--text-secondary)]">
-                        No problems detected
+                ) : activeTab === 'Output' ? (
+                    <div className="flex-1 flex flex-col p-4 overflow-auto font-mono text-[12px]">
+                        <div className="flex items-center gap-2 text-[#8c8c8c] mb-2 border-b border-[#2b2b2b] pb-2">
+                            <span>Show output from:</span>
+                            <select className="bg-[#1e1e1e] border border-[#3c3c3c] rounded px-1 text-[#cccccc] outline-none">
+                                <option>Tasks</option>
+                                <option>Extension Host</option>
+                                <option>GitHub Authentication</option>
+                            </select>
+                        </div>
+                        <div className="text-[#8c8c8c]">
+                            [info] Initializing extension host...
+                            <br />
+                            [info] Finished loading extensions.
+                        </div>
+                    </div>
+                ) : activeTab === 'Debug Console' ? (
+                    <div className="flex-1 flex flex-col p-4 overflow-auto font-mono text-[12px]">
+                        <div className="text-[#8c8c8c] italic">
+                            The debug console is empty. Start a debug session to see output here.
+                        </div>
+                        <div className="mt-auto flex items-center border-t border-[#2b2b2b] pt-2">
+                            <span className="text-blue-500 mr-2">&gt;</span>
+                            <input
+                                className="bg-transparent border-none outline-none text-[#cccccc] flex-1"
+                                placeholder="Type a debug command or expression"
+                                readOnly
+                            />
+                        </div>
+                    </div>
+                ) : (
+                    <div className="p-4 text-[#8c8c8c] flex-1">
+                        {activeTab} content goes here...
                     </div>
                 )}
             </div>

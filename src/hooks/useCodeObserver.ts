@@ -43,9 +43,14 @@ export function useCodeObserver(activeFileId: string | null, content: string) {
         };
     }, []); // Run once on mount
 
-    // Debounce content changes
+    // Debounce content changes — 1s delay + 50 char minimum to reduce rate limits
+    const MIN_CHARS = 50;
+
     useEffect(() => {
         if (!activeFileId || !ws.current || ws.current.readyState !== WebSocket.OPEN) return;
+
+        // Skip very short content to avoid noisy AI calls
+        if (!content || content.trim().length < MIN_CHARS) return;
 
         const timeoutId = setTimeout(() => {
             try {
@@ -58,7 +63,7 @@ export function useCodeObserver(activeFileId: string | null, content: string) {
             } catch (e) {
                 console.error("Failed to send code update", e);
             }
-        }, 300); // 300ms debounce
+        }, 1000); // 1s debounce — prioritizing stability over instant feedback
 
         return () => clearTimeout(timeoutId);
     }, [content, activeFileId]);
