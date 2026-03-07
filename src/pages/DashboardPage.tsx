@@ -76,11 +76,15 @@ export default function DashboardPage() {
             )}>
                 {/* Sticky Header */}
                 <header className="sticky top-0 z-40 w-full h-16 glass-panel border-b border-[var(--border-muted)] flex items-center justify-between px-8">
-                    {/* Breadcrumbs */}
                     <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                        <img 
+                            src="/deexenlogo.png" 
+                            alt="" 
+                            className="w-5 h-5 object-contain" 
+                        />
                         <span
                             onClick={() => navigate('/dashboard')}
-                            className="hover:text-[var(--text-primary)] cursor-pointer transition-colors"
+                            className="hover:text-[var(--text-primary)] cursor-pointer transition-colors font-semibold"
                         >
                             deexen
                         </span>

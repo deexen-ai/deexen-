@@ -57,15 +57,22 @@ export default function LoginPage() {
         <div className="min-h-screen w-full bg-[var(--bg-canvas)] flex items-center justify-center font-sans">
             <div className="w-full max-w-[360px] px-6">
                 {/* Logo */}
-                <div className="flex items-center justify-center mb-10">
-                    <img src="/deexen_full_logo.png" alt="Deexen AI" className="h-20 w-auto object-contain" />
+                <div className="flex flex-col items-center justify-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                    <div className="relative group">
+                        <div className="absolute inset-0 bg-[#FF6A00] blur-2xl opacity-20 rounded-2xl scale-110"></div>
+                        <img 
+                            src="/deexenlogo.png" 
+                            alt="Deexen AI" 
+                            className="w-16 h-16 relative z-10 object-contain rounded-2xl shadow-[0_0_20px_rgba(255,106,0,0.15)] group-hover:scale-105 transition-transform duration-300" 
+                        />
+                    </div>
                 </div>
 
                 {/* Form */}
                 <div className="space-y-6">
-                    <div className="text-center">
-                        <h1 className="text-[var(--text-primary)] text-xl font-medium">Sign in</h1>
-                        <p className="text-[var(--text-secondary)] text-sm mt-1">Continue to your workspace</p>
+                    <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-100">
+                        <h1 className="text-[var(--text-primary)] text-xl font-medium">Welcome back</h1>
+                        <p className="text-[var(--text-secondary)] text-sm mt-1">Sign in to continue your work</p>
                     </div>
 
                     <form className="space-y-4" onSubmit={handleSubmit}>
@@ -122,7 +129,7 @@ export default function LoginPage() {
 
                         <Button
                             type="submit"
-                            className="w-full h-10 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded transition-colors"
+                            className="w-full h-11 bg-[#FF6A00] hover:bg-[#FF7A1A] text-white text-sm font-semibold rounded-lg transition-all duration-300 shadow-[0_4px_15px_rgba(255,106,0,0.2)] active:scale-[0.98]"
                             isLoading={isLoading}
                             disabled={!!emailError || !!passwordError || !email || !password}
                         >
