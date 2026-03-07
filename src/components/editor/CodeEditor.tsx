@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import Editor, { loader } from '@monaco-editor/react';
 import { X, FileCode, Play } from 'lucide-react';
 import { useFileStore } from '@/stores/useFileStore';
@@ -14,11 +14,20 @@ loader.config({
     }
 });
 
-export default function CodeEditor() {
+interface CodeEditorProps {
+    onSave?: () => void;
+}
+
+export default function CodeEditor({ onSave }: CodeEditorProps) {
     const { openFiles, activeFileId, files, closeFile, selectFile, updateFileContent, projectName } = useFileStore();
     const { theme } = useThemeStore();
     const { isAIPanelOpen, toggleAIPanel, setTerminalOpen } = useLayoutStore();
     const { executeCommand } = useTerminalStore();
+
+    const saveRef = useRef(onSave);
+    useEffect(() => {
+        saveRef.current = onSave;
+    }, [onSave]);
 
     const [activeContent, setActiveContent] = React.useState('');
     const [activeLanguage, setActiveLanguage] = React.useState('typescript');
@@ -162,6 +171,16 @@ export default function CodeEditor() {
                             cursorBlinking: 'smooth',
                             cursorWidth: 2,
                             smoothScrolling: true,
+                        }}
+                        onMount={(editor, monaco) => {
+                            editor.addAction({
+                                id: 'save-project',
+                                label: 'Save Project',
+                                keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
+                                run: () => {
+                                    if (saveRef.current) saveRef.current();
+                                }
+                            });
                         }}
                         beforeMount={(monaco) => {
                             monaco.editor.defineTheme('deexen-dark', {

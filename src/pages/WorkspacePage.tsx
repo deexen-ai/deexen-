@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FileCode, Search, GitBranch, Settings, ArrowLeft, Puzzle, Blocks, Activity, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { FileCode, Search, GitBranch, Settings, ArrowLeft, Puzzle, Blocks, Activity, Sparkles, Save } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 
@@ -11,6 +11,7 @@ import CodeEditor from '@/components/editor/CodeEditor';
 import { runWorkspaceTour } from '@/services/tourService';
 import Terminal from '@/components/terminal/Terminal';
 import AIPanel from '@/components/ai-panel/AIPanel';
+import { useToastStore } from '@/stores/useToastStore';
 
 // Activity Bar Component
 // ActivityBar Component
@@ -85,6 +86,50 @@ export default function WorkspacePage() {
 
     const { activeFileId, projectName, setFiles, setProjectName } = useFileStore();
     const files = useFileStore(state => state.files); // Selector for persistence/updates
+    const { updateProject } = useProjectStore();
+    const { addToast } = useToastStore();
+
+    const handleSave = useCallback(() => {
+        if (projectId) {
+            // Get current files directly to avoid dependency on 'files' state
+            const currentFiles = useFileStore.getState().files;
+
+            updateProject(projectId, {
+                fileTree: currentFiles,
+                lastModified: new Date().toLocaleString([], {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })
+            });
+            addToast('Project saved successfully', 'success');
+        }
+    }, [projectId, updateProject, addToast]);
+
+    // Keyboard Shortcut (Ctrl+S)
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                handleSave();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleSave]);
+
+    // Auto-save logic
+    useEffect(() => {
+        const project = projects.find(p => p.id === projectId);
+        if (project?.autoSave) {
+            const interval = setInterval(() => {
+                handleSave();
+            }, 20000); // 20 seconds
+            return () => clearInterval(interval);
+        }
+    }, [projectId, projects, handleSave]);
 
     const handleIconClick = (viewId: string) => {
         if (activeSidebarView === viewId) {
@@ -215,6 +260,16 @@ export default function WorkspacePage() {
                     )}
                 </div>
 
+                {/* Save Button */}
+                <button
+                    onClick={handleSave}
+                    title="Save Project (Ctrl+S)"
+                    className="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-orange-500 hover:bg-orange-600 text-white transition-all shadow-sm hover:shadow-orange-500/20 mr-4 active:scale-95"
+                >
+                    <Save className="h-3 w-3" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Save</span>
+                </button>
+
                 {/* Layout Controls - Right Aligned */}
                 <div className="flex items-center space-x-1">
                     <button
@@ -320,7 +375,10 @@ export default function WorkspacePage() {
                             )}
                             {activeSidebarView === 'settings' && (
                                 <div className="p-4 space-y-6 animate-in fade-in slide-in-from-left-2 duration-300">
-                                    <ProjectSettingsPanel project={projects.find(p => p.id === projectId)} />
+                                    <ProjectSettingsPanel
+                                        project={projects.find(p => p.id === projectId)}
+                                        onUpdate={(updates) => projectId && updateProject(projectId, updates)}
+                                    />
                                 </div>
                             )}
                         </div>
@@ -339,7 +397,7 @@ export default function WorkspacePage() {
 
                     {/* Editor */}
                     <div className="flex-1 min-h-0 flex flex-col relative bg-[var(--bg-canvas)]">
-                        <CodeEditor />
+                        <CodeEditor onSave={handleSave} />
                     </div>
 
                     {/* Terminal Resize Handle */}
@@ -397,7 +455,7 @@ export default function WorkspacePage() {
     );
 }
 // Project Settings Panel Component
-function ProjectSettingsPanel({ project }: { project: any }) {
+function ProjectSettingsPanel({ project, onUpdate }: { project: any, onUpdate: (updates: any) => void }) {
     if (!project) return null;
 
     const sections = [
@@ -410,8 +468,8 @@ function ProjectSettingsPanel({ project }: { project: any }) {
     return (
         <div className="space-y-6">
             <div className="flex flex-col items-center text-center pb-2 border-b border-[var(--border-muted)]">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center mb-4 shadow-lg shadow-orange-500/20 text-white">
-                    <span className="text-2xl font-bold">{project.name.charAt(0).toUpperCase()}</span>
+                <div className="w-16 h-16 rounded-2xl bg-black border border-[var(--border-default)] flex items-center justify-center mb-4 shadow-lg shadow-black/20 overflow-hidden">
+                    <img src="/deexenlogo.png" alt="Logo" className="w-10 h-10 object-contain" />
                 </div>
                 <h3 className="font-display font-bold text-[var(--text-primary)] text-lg leading-tight">{project.name}</h3>
                 <p className="text-xs text-[var(--text-tertiary)] mt-1 tracking-wide uppercase font-medium">Project ID: {project.id.slice(0, 8)}</p>
@@ -456,6 +514,35 @@ function ProjectSettingsPanel({ project }: { project: any }) {
                     ) : (
                         <span className="text-[10px] text-[var(--text-tertiary)] italic">Auto-detecting...</span>
                     )}
+                </div>
+            </div>
+
+            <div className="pt-2">
+                <div className="flex items-center justify-between p-3 bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl hover:border-orange-500/30 transition-all group">
+                    <div className="flex items-center gap-3">
+                        <div className={cn(
+                            "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
+                            project.autoSave ? "bg-orange-500/20 text-orange-500" : "bg-[var(--bg-surface-hover)] text-[var(--text-tertiary)]"
+                        )}>
+                            <Activity className="w-4 h-4" />
+                        </div>
+                        <div>
+                            <div className="text-xs font-bold text-[var(--text-primary)]">Auto-save</div>
+                            <div className="text-[10px] text-[var(--text-tertiary)]">Save every 20 seconds</div>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => onUpdate({ autoSave: !project.autoSave })}
+                        className={cn(
+                            "w-10 h-5 rounded-full relative transition-colors duration-200 outline-none",
+                            project.autoSave ? "bg-orange-500" : "bg-[var(--border-default)]"
+                        )}
+                    >
+                        <div className={cn(
+                            "absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform duration-200 shadow-sm",
+                            project.autoSave ? "translate-x-5" : "translate-x-0"
+                        )} />
+                    </button>
                 </div>
             </div>
         </div>

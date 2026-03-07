@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, Code2, Users, FolderKanban } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -6,58 +6,92 @@ import { Button } from '@/components/ui/Button';
 export default function LandingPage() {
 
     const navigate = useNavigate();
-    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    const mainRef = React.useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
-            setMousePos({ x: e.clientX, y: e.clientY });
+            if (mainRef.current) {
+                mainRef.current.style.setProperty('--mouse-x', `${e.clientX}px`);
+                mainRef.current.style.setProperty('--mouse-y', `${e.clientY}px`);
+            }
         };
         window.addEventListener('mousemove', handleMouseMove);
         return () => window.removeEventListener('mousemove', handleMouseMove);
     }, []);
 
     return (
-        <div className="min-h-screen bg-[#000000] text-[#ededed] font-sans selection:bg-[#FF6A00]/30 selection:text-white relative overflow-hidden">
+        <div
+            ref={mainRef}
+            className="min-h-screen bg-[#000000] text-[#ededed] font-sans selection:bg-[#FF6A00]/30 selection:text-white relative overflow-x-hidden"
+            style={{
+                '--mouse-x': '50%',
+                '--mouse-y': '50%'
+            } as React.CSSProperties}
+        >
 
             {/* Immersive Background Elements */}
-            <div className="absolute inset-0 z-0 pointer-events-none">
+            <div className="fixed inset-0 z-0 pointer-events-none">
                 {/* Charcoal to black gradient */}
-                <div className="absolute inset-0 bg-gradient-to-b from-[#111111] via-[#050505] to-[#000000]"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a] via-[#050505] to-[#000000]"></div>
 
                 {/* Interactive cursor spotlight */}
                 <div
-                    className="absolute inset-0 mix-blend-screen transition-all duration-75 ease-out opacity-60"
+                    className="absolute inset-0 transition-opacity duration-1000 opacity-60"
                     style={{
-                        background: `radial-gradient(1000px circle at ${mousePos.x}px ${mousePos.y}px, rgba(255, 106, 0, 0.08), transparent 40%)`
+                        background: `radial-gradient(1000px circle at var(--mouse-x) var(--mouse-y), rgba(255, 106, 0, 0.08), transparent 40%)`
                     }}
                 ></div>
 
-                {/* Central radial soft glow */}
-                <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[#FF6A00] opacity-[0.05] blur-[100px] rounded-[100%] pointer-events-none animate-[pulse_4s_ease-in-out_infinite]"></div>
-
                 {/* Technical developer grid overlay */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_70%_70%_at_50%_30%,#000_60%,transparent_100%)]"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_30%,#000_60%,transparent_100%)]"></div>
 
-                {/* Soft ambient vignette */}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,#000000_100%)]"></div>
+                {/* Central soft glow */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[100vw] h-[600px] bg-[#FF6A00] opacity-[0.03] blur-[120px] rounded-full pointer-events-none"></div>
 
-                {/* Simulated floating particles via CSS pattern */}
-                <div className="absolute inset-0 opacity-[0.02] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjZmZmIi8+Cjwvc3ZnPg==')] [mask-image:linear-gradient(to_bottom,transparent,black,transparent)] animate-[pulse_8s_ease-in-out_infinite]"></div>
+                {/* Grain effect for texture */}
+                <div className="absolute inset-0 opacity-[0.15] mix-blend-overlay pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
             </div>
 
-            {/* Glassmorphism Navigation */}
-            <nav className="fixed top-0 left-0 right-0 z-50 h-[72px] bg-[#000000]/40 backdrop-blur-xl border-b border-white/[0.04] flex items-center justify-between px-8 max-w-[1200px] mx-auto w-full transition-all duration-300">
-                <div className="flex items-center cursor-pointer group" onClick={() => navigate('/')}>
-                    <img src="/deexen_full_logo.png" alt="Deexen AI" className="h-7 group-hover:scale-105 transition-transform duration-500 brightness-[100] saturate-0" />
-                </div>
-                <div className="flex items-center space-x-6 relative z-10">
-                    <button className="text-[14px] font-medium text-[#888888] hover:text-white transition-colors duration-300" onClick={() => navigate('/login')}>Log in</button>
-                    <button className="text-[14px] font-medium bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white px-5 py-2 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(255,255,255,0.05)]" onClick={() => navigate('/signup')}>Sign up</button>
+            {/* Premium Navigation Header */}
+            <nav className="fixed top-0 left-0 right-0 z-[100] border-b border-white/[0.06] bg-[#000000]/60 backdrop-blur-2xl transition-all duration-500">
+                <div className="max-w-[1200px] mx-auto h-[76px] flex items-center justify-between px-8">
+                    <div 
+                        className="flex items-center gap-2.5 cursor-pointer group" 
+                        onClick={() => navigate('/')}
+                    >
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-[#FF6A00] blur-[16px] opacity-0 group-hover:opacity-30 transition-opacity duration-500 rounded-xl"></div>
+                            <img 
+                                src="/deexenlogo.png" 
+                                alt="Deexen AI" 
+                                className="w-10 h-10 relative z-10 object-contain rounded-xl group-hover:scale-[1.05] transition-all duration-300" 
+                            />
+                        </div>
+                        <span className="text-white font-semibold text-[17px] tracking-tight select-none">
+                            Deexen
+                        </span>
+                    </div>
+
+                    <div className="flex items-center space-x-8">
+                        <button 
+                            className="text-[14px] font-medium text-[#a1a1a1] hover:text-white transition-all duration-300 relative group"
+                            onClick={() => navigate('/login')}
+                        >
+                            Log in
+                            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#FF6A00]/50 group-hover:w-full transition-all duration-300"></span>
+                        </button>
+                        <button 
+                            className="text-[14px] font-semibold bg-white text-black px-6 py-2.5 rounded-full hover:bg-[#FF6A00] hover:text-white transition-all duration-500 shadow-[0_0_25px_rgba(255,255,255,0.1)] active:scale-95"
+                            onClick={() => navigate('/signup')}
+                        >
+                            Sign up
+                        </button>
+                    </div>
                 </div>
             </nav>
 
             {/* Smooth Scroll Content Container */}
-            <main className="pt-[180px] pb-20 px-6 max-w-[1000px] mx-auto w-full relative z-10 h-screen overflow-y-auto" style={{ scrollBehavior: 'smooth' }}>
+            <main className="pt-[140px] pb-20 px-6 max-w-[1200px] mx-auto w-full relative z-10" style={{ scrollBehavior: 'smooth' }}>
 
                 {/* Hero Section */}
                 <div className="flex flex-col items-center text-center mx-auto mb-32 relative">
@@ -67,9 +101,9 @@ export default function LandingPage() {
                         <ArrowRight className="w-3.5 h-3.5 text-[#555] group-hover:text-[#FF6A00] transition-colors" />
                     </div>
 
-                    <h1 className="font-sans text-[64px] md:text-[96px] font-bold leading-[1.05] tracking-[-0.04em] mb-6 animate-in fade-in slide-in-from-bottom-12 duration-[1.2s] delay-150 ease-out">
-                        <span className="text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.05)]">The Professional IDE</span> <br />
-                        <span className="text-[#777777] font-normal italic tracking-[-0.02em]">for builders to show & tell.</span>
+                    <h1 className="font-sans text-[48px] sm:text-[64px] md:text-[88px] font-bold leading-[1.05] tracking-[-0.04em] mb-8 animate-in fade-in slide-in-from-bottom-12 duration-[1.2s] delay-150 ease-out">
+                        <span className="text-white drop-shadow-[0_10px_30px_rgba(255,255,255,0.1)]">The Professional IDE</span> <br />
+                        <span className="text-white/40 font-normal italic tracking-[-0.02em] block mt-2">for builders to show & tell.</span>
                     </h1>
 
                     <p className="text-[18px] md:text-[20px] text-[#888888] font-normal max-w-[620px] mx-auto mb-12 animate-in fade-in slide-in-from-bottom-12 duration-[1.2s] delay-300 leading-[1.6]">
@@ -209,28 +243,28 @@ export default function LandingPage() {
                         </div>
                         <div className="bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
                             <h4 className="font-medium mb-4 text-sm text-neutral-500 uppercase tracking-wider">Your Stack</h4>
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 {[
-                                    { name: 'React', icon: 'react', color: '#61DAFB' },
-                                    { name: 'TypeScript', icon: 'typescript', color: '#3178C6' },
-                                    { name: 'Node.js', icon: 'nodedotjs', color: '#339933' },
-                                    { name: 'Python', icon: 'python', color: '#3776AB' },
-                                    { name: 'Rust', icon: 'rust', color: '#ffffff' }
+                                    { name: 'React', icon: 'react' },
+                                    { name: 'TypeScript', icon: 'ts' },
+                                    { name: 'Node.js', icon: 'nodejs' },
+                                    { name: 'Python', icon: 'py' },
+                                    { name: 'Rust', icon: 'rust' }
                                 ].map((skill) => (
-                                    <div key={skill.name} className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-3">
-                                            <div className="w-5 h-5 flex items-center justify-center bg-transparent">
+                                    <div key={skill.name} className="flex items-center justify-between p-2 rounded-lg hover:bg-white/[0.02] transition-colors group">
+                                        <div className="flex items-center space-x-4">
+                                            <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#111] border border-white/5 shadow-inner overflow-hidden">
                                                 <img
-                                                    src={`https://cdn.simpleicons.org/${skill.icon}/${skill.color.replace('#', '')}`}
+                                                    src={`https://skillicons.dev/icons?i=${skill.icon}`}
                                                     alt={skill.name}
-                                                    className="w-full h-full object-contain"
+                                                    className="w-5 h-5 object-contain"
                                                 />
                                             </div>
-                                            <span className="font-medium">{skill.name}</span>
+                                            <span className="font-medium text-[15px]">{skill.name}</span>
                                         </div>
-                                        <div className="flex items-center text-green-600 dark:text-green-500 text-sm">
-                                            <CheckCircle2 className="w-4 h-4 mr-1.5" />
-                                            <span>Verified</span>
+                                        <div className="flex items-center text-emerald-500 text-xs font-semibold bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">
+                                            <CheckCircle2 className="w-3 h-3 mr-1" />
+                                            <span>VERIFIED</span>
                                         </div>
                                     </div>
                                 ))}
