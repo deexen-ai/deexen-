@@ -163,10 +163,7 @@ export default function LoginPage() {
                     </p>
                 </div>
 
-                {/* Demo note */}
-                <p className="text-center text-xs text-[var(--text-secondary)] mt-6">
-                    Demo: any valid email + password (6+ chars)
-                </p>
+
             </div>
         </div>
     );
