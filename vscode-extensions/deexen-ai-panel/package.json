@@ -1,0 +1,35 @@
+{
+  "name": "deexen-ai-panel",
+  "displayName": "Deexen AI",
+  "description": "Deexen IDE AI Assistant",
+  "version": "1.0.0",
+  "publisher": "deexen",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./src/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "deexen-ai-sidebar",
+          "title": "Deexen AI",
+          "icon": "$(hubot)"
+        }
+      ]
+    },
+    "views": {
+      "deexen-ai-sidebar": [
+        {
+          "type": "webview",
+          "id": "deexenAIView",
+          "name": "AI Assistant"
+        }
+      ]
+    }
+  }
+}

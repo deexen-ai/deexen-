@@ -1,550 +1,180 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { FileCode, Search, GitBranch, Settings, ArrowLeft, Puzzle, Blocks, Activity, Sparkles, Save } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { cn } from '@/utils/cn';
-
-import { useFileStore, getFileBreadcrumbs, type FileNode } from '@/stores/useFileStore';
-import { useLayoutStore } from '@/stores/useLayoutStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { useProjectStore } from '@/stores/useProjectStore';
-import FileExplorer from '@/components/file-explorer/FileExplorer';
-import CodeEditor from '@/components/editor/CodeEditor';
-import { runWorkspaceTour } from '@/services/tourService';
-import Terminal from '@/components/terminal/Terminal';
-import AIPanel from '@/components/ai-panel/AIPanel';
-import { useToastStore } from '@/stores/useToastStore';
+import { projectService } from '@/services/projectService';
 
-// Activity Bar Component
-// ActivityBar Component
-interface ActivityBarProps {
-    activeView: string;
-    onIconClick: (viewId: string) => void;
-}
-
-const ActivityBar = ({ activeView, onIconClick }: ActivityBarProps) => {
-    const icons = [
-        { id: 'explorer', icon: FileCode, label: 'Explorer' },
-        { id: 'search', icon: Search, label: 'Search' },
-        { id: 'git', icon: GitBranch, label: 'Source Control' },
-        { id: 'extensions', icon: Puzzle, label: 'Extensions' },
-    ];
-
-    return (
-        <div className="w-12 bg-[var(--bg-canvas)] border-r border-[var(--border-default)] flex flex-col items-center py-2 flex-shrink-0">
-            {icons.map(item => (
-                <button
-                    key={item.id}
-                    id={`activity-bar-${item.id}`}
-                    onClick={() => onIconClick(item.id)}
-                    title={item.label}
-                    className={cn(
-                        "w-10 h-10 flex items-center justify-center relative transition-colors",
-                        activeView === item.id
-                            ? "text-[var(--text-primary)]"
-                            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                    )}
-                >
-                    {activeView === item.id && (
-                        <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-orange-500" />
-                    )}
-                    <item.icon className="w-5 h-5" />
-                </button>
-            ))}
-
-            <div className="flex-1" />
-
-            <button
-                title="Settings"
-                onClick={() => onIconClick('settings')}
-                className={cn(
-                    "w-10 h-10 flex items-center justify-center relative transition-colors",
-                    activeView === 'settings'
-                        ? "text-[var(--text-primary)]"
-                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                )}
-            >
-                {activeView === 'settings' && (
-                    <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-orange-500" />
-                )}
-                <Settings className="w-5 h-5" />
-            </button>
-        </div>
-    );
-};
+const VSCODE_SERVER_URL = import.meta.env.VITE_VSCODE_URL || 'http://127.0.0.1:8080';
 
 export default function WorkspacePage() {
     const navigate = useNavigate();
-    const [activeSidebarView, setActiveSidebarView] = useState('explorer');
-    const [leftPanelWidth, setLeftPanelWidth] = useState(240);
-    const [rightPanelWidth, setRightPanelWidth] = useState(320);
-    const [terminalHeight, setTerminalHeight] = useState(200);
-    const [isDragging, setIsDragging] = useState<'left' | 'right' | 'terminal' | null>(null);
-
-    const { isSidebarOpen, setSidebarOpen, toggleSidebar, isTerminalOpen, toggleTerminal, isTerminalMaximized, toggleAIPanel, isAIPanelOpen } = useLayoutStore();
-
     const { projectId } = useParams();
+    const { token } = useAuthStore();
     const { projects } = useProjectStore();
+    const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+    const [errorMsg, setErrorMsg] = useState('');
+    const [currentProject, setCurrentProject] = useState<any>(null);
+    const iframeRef = useRef<HTMLIFrameElement>(null);
 
-    const { activeFileId, projectName, setFiles, setProjectName } = useFileStore();
-    const files = useFileStore(state => state.files); // Selector for persistence/updates
-    const { updateProject } = useProjectStore();
-    const { addToast } = useToastStore();
-
-    const handleSave = useCallback(() => {
-        if (projectId) {
-            // Get current files directly to avoid dependency on 'files' state
-            const currentFiles = useFileStore.getState().files;
-
-            updateProject(projectId, {
-                fileTree: currentFiles,
-                lastModified: new Date().toLocaleString([], {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })
-            });
-            addToast('Project saved successfully', 'success');
-        }
-    }, [projectId, updateProject, addToast]);
-
-    // Keyboard Shortcut (Ctrl+S)
     useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                e.preventDefault();
-                handleSave();
-            }
-        };
+        let isMounted = true;
+        let timer: ReturnType<typeof setTimeout>;
 
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [handleSave]);
-
-    // Auto-save logic
-    useEffect(() => {
-        const project = projects.find(p => p.id === projectId);
-        if (project?.autoSave) {
-            const interval = setInterval(() => {
-                handleSave();
-            }, 20000); // 20 seconds
-            return () => clearInterval(interval);
-        }
-    }, [projectId, projects, handleSave]);
-
-    const handleIconClick = (viewId: string) => {
-        if (activeSidebarView === viewId) {
-            // Toggle sidebar if clicking the same icon
-            toggleSidebar();
-        } else {
-            // Switch view and ensure sidebar is open
-            setActiveSidebarView(viewId);
-            if (!isSidebarOpen) {
-                setSidebarOpen(true);
-            }
-        }
-    };
-
-    const activeFilePath = activeFileId ? getFileBreadcrumbs(files, activeFileId) : '';
-
-    // Load Project Data
-    useEffect(() => {
-        if (!projectId) return;
-
-        const project = projects.find(p => p.id === projectId);
-        if (project) {
-            setProjectName(project.name);
-
-            if (project.fileTree) {
-                setFiles(project.fileTree);
-            } else {
-                // Default structure for new/empty projects
-                const defaultFiles: FileNode[] = [
-                    {
-                        id: 'root',
-                        name: 'root',
-                        type: 'folder',
-                        isOpen: true,
-                        children: [
-                            {
-                                id: 'project',
-                                name: 'project',
-                                type: 'folder',
-                                isOpen: true,
-                                children: [
-                                    {
-                                        id: 'document.txt',
-                                        name: 'document.txt',
-                                        type: 'file',
-                                        content: project.description || `Welcome to your new blank project: ${project.name}`
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                ];
-                setFiles(defaultFiles);
-            }
-        } else {
-            // Project not found - likely deleted or invalid ID
+        if (!projectId) {
             navigate('/dashboard');
+            return;
         }
-    }, [projectId, projects, setFiles, setProjectName, navigate]);
 
+        const bootWorkspace = async () => {
+            if (!token) {
+                navigate('/login');
+                return;
+            }
 
+            try {
+                let project = projects.find(p => p.id === projectId);
 
-    // ... existing resize logic ...
+                if (!project) {
+                    // Fetch project fallback when store is initially empty
+                    project = await projectService.getProject(projectId) as any;
+                }
 
-    const startResize = (direction: 'left' | 'right' | 'terminal') => (e: React.MouseEvent) => {
-        e.preventDefault();
-        setIsDragging(direction);
-    };
+                if (!isMounted) return;
 
-    useEffect(() => {
-        if (!isDragging) return;
+                if (!project) {
+                    setStatus('error');
+                    setErrorMsg('Project not found. It may have been deleted.');
+                    return;
+                }
 
-        const onMouseMove = (e: MouseEvent) => {
-            if (isDragging === 'left') {
-                const newWidth = e.clientX - 48;
-                if (newWidth > 150 && newWidth < 400) setLeftPanelWidth(newWidth);
-            } else if (isDragging === 'right') {
-                const newWidth = window.innerWidth - e.clientX;
-                if (newWidth > 300 && newWidth < 500) setRightPanelWidth(newWidth);
-            } else if (isDragging === 'terminal') {
-                const newHeight = window.innerHeight - e.clientY - 22;
-                if (newHeight > 100 && newHeight < window.innerHeight - 200) setTerminalHeight(newHeight);
+                setCurrentProject(project);
+
+                // Simulating the backend startup for the VS Code process wrapper
+                timer = setTimeout(() => {
+                    if (isMounted) setStatus('ready');
+                }, 1500);
+
+            } catch (err: any) {
+                if (isMounted) {
+                    setStatus('error');
+                    setErrorMsg(err.message || 'Error occurred while loading project');
+                }
             }
         };
 
-        const onMouseUp = () => setIsDragging(null);
+        bootWorkspace();
 
-        window.addEventListener('mousemove', onMouseMove);
-        window.addEventListener('mouseup', onMouseUp);
         return () => {
-            window.removeEventListener('mousemove', onMouseMove);
-            window.removeEventListener('mouseup', onMouseUp);
+            isMounted = false;
+            if (timer) clearTimeout(timer);
         };
-    }, [isDragging]);
+    }, [projectId, token, projects, navigate]);
 
-    // Tour Trigger
-    const { hasSeenWorkspaceTour, completeWorkspaceTour } = useLayoutStore();
+    // Handle messages coming from the VS Code Webview
     useEffect(() => {
-        if (!hasSeenWorkspaceTour) {
-            setTimeout(() => {
-                runWorkspaceTour(completeWorkspaceTour);
-            }, 1000);
-        }
-    }, [hasSeenWorkspaceTour, completeWorkspaceTour]);
+        const handleMessage = (event: MessageEvent) => {
+            // Ensure we aren't listening to completely arbitrary windows
+            if (event.data?.type === 'DEEXEN_VSCODE_AI_READY') {
+                // The AI Webview inside the VS Code server initialized.
+                // We send it the React API route and Token so it can render the core Chat UI.
+                const aiPanelUrl = window.location.origin + '/ai-panel';
+                event.source?.postMessage(
+                    {
+                        type: 'DEEXEN_LOAD_AI',
+                        url: aiPanelUrl,
+                        token: token,
+                        projectId: projectId
+                    },
+                    { targetOrigin: '*' }
+                );
+            }
+        };
+
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, [token, projectId]);
+
+    const project = currentProject || projects.find(p => p.id === projectId);
 
     return (
-        <div className={cn(
-            "h-screen w-screen flex flex-col bg-[var(--bg-canvas)] overflow-hidden text-[var(--text-primary)] font-sans",
-            isDragging && "cursor-grabbing select-none"
-        )}>
-            {/* Title Bar */}
-            <div className="h-8 bg-[var(--bg-canvas)] border-b border-[var(--border-default)] flex items-center px-3 text-xs select-none z-10">
-                <div
-                    id="back-to-dashboard-btn"
-                    className="flex items-center space-x-2 cursor-pointer hover:text-[var(--text-primary)] transition-colors text-[var(--text-secondary)]"
-                    onClick={() => navigate('/dashboard')}
-                >
-                    <ArrowLeft className="h-3.5 w-3.5" />
-                    <span>Back to Dashboard</span>
-                </div>
-                <div className="flex-1 flex items-center justify-center">
-                    <span className="text-[var(--text-primary)]">{projectName}</span>
-                    {activeFilePath && (
+        <div style={{
+            height: '100vh',
+            width: '100vw',
+            background: '#0c0c0c',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontFamily: 'Inter, -apple-system, sans-serif',
+            overflow: 'hidden'
+        }}>
+            {status !== 'ready' && (
+                <div style={{
+                    position: 'absolute', inset: 0, zIndex: 10,
+                    display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', justifyContent: 'center',
+                    background: '#0c0c0c', gap: 24
+                }}>
+                    {status === 'error' ? (
                         <>
-                            <span className="text-[var(--text-secondary)] mx-2">—</span>
-                            <span className="text-[var(--text-secondary)]">{activeFilePath}</span>
+                            <div style={{ fontSize: 40 }}>⚠️</div>
+                            <p style={{ color: '#f87171', fontSize: 15, fontWeight: 600 }}>{errorMsg}</p>
+                            <button
+                                onClick={() => navigate('/dashboard')}
+                                style={{
+                                    background: '#f97316', color: '#fff', border: 'none',
+                                    borderRadius: 8, padding: '10px 24px', fontSize: 13,
+                                    fontWeight: 700, cursor: 'pointer',
+                                }}
+                            >
+                                Back to Dashboard
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <img
+                                src='/deexenlogo.png'
+                                alt='Deexen'
+                                style={{ width: 52, height: 52, objectFit: 'contain' }}
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                            />
+                            <div style={{ position: 'relative', width: 48, height: 48 }}>
+                                <div style={{
+                                    position: 'absolute', inset: 0,
+                                    border: '3px solid rgba(249,115,22,0.15)',
+                                    borderTopColor: '#f97316',
+                                    borderRadius: '50%',
+                                    animation: 'spin 0.8s linear infinite',
+                                }} />
+                            </div>
+                            <div style={{ textAlign: 'center' }}>
+                                <p style={{ color: '#d4d4d4', fontSize: 15, fontWeight: 600, marginBottom: 6 }}>
+                                    Starting Deexen Cloud Environment…
+                                </p>
+                                <p style={{ color: '#4b5563', fontSize: 12 }}>
+                                    Booting project "{project?.name || 'Loading'}" • Powered by VS Code
+                                </p>
+                            </div>
                         </>
                     )}
                 </div>
-
-                {/* Save Button */}
-                <button
-                    onClick={handleSave}
-                    title="Save Project (Ctrl+S)"
-                    className="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-orange-500 hover:bg-orange-600 text-white transition-all shadow-sm hover:shadow-orange-500/20 mr-4 active:scale-95"
-                >
-                    <Save className="h-3 w-3" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Save</span>
-                </button>
-
-                {/* Layout Controls - Right Aligned */}
-                <div className="flex items-center space-x-1">
-                    <button
-                        onClick={toggleSidebar}
-                        title="Toggle Sidebar"
-                        className={cn(
-                            "p-1 rounded-[2px] hover:bg-[var(--bg-surface-hover)] transition-colors",
-                            isSidebarOpen ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)] opacity-70 hover:opacity-100"
-                        )}
-                    >
-                        <div className="w-3.5 h-3.5 border border-current rounded-[2px] relative">
-                            {isSidebarOpen ? (
-                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-current" />
-                            ) : (
-                                <div className="absolute left-[3px] top-0 bottom-0 w-[1px] bg-current" />
-                            )}
-                        </div>
-                    </button>
-                    <button
-                        id="terminal-toggle-btn"
-                        onClick={toggleTerminal}
-                        title="Toggle Terminal"
-                        className={cn(
-                            "p-1 rounded-[2px] hover:bg-[var(--bg-surface-hover)] transition-colors",
-                            isTerminalOpen ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)] opacity-70 hover:opacity-100"
-                        )}
-                    >
-                        <div className="w-3.5 h-3.5 border border-current rounded-[2px] relative">
-                            {isTerminalOpen ? (
-                                <div className="absolute left-0 right-0 bottom-0 h-1 bg-current" />
-                            ) : (
-                                <div className="absolute left-0 right-0 bottom-[3px] h-[1px] bg-current" />
-                            )}
-                        </div>
-                    </button>
-                    <button
-                        onClick={toggleAIPanel}
-                        title="Toggle AI Panel"
-                        className={cn(
-                            "p-1 rounded-[2px] hover:bg-[var(--bg-surface-hover)] transition-colors",
-                            isAIPanelOpen ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)] opacity-70 hover:opacity-100"
-                        )}
-                    >
-                        <div className="w-3.5 h-3.5 border border-current rounded-[2px] relative">
-                            {isAIPanelOpen ? (
-                                <div className="absolute right-0 top-0 bottom-0 w-1 bg-current" />
-                            ) : (
-                                <div className="absolute right-[3px] top-0 bottom-0 w-[1px] bg-current" />
-                            )}
-                        </div>
-                    </button>
-                </div>
-            </div>
-
-            {/* Main Layout */}
-            <div className="flex-1 flex overflow-hidden">
-                {/* Activity Bar */}
-                <div id="activity-bar">
-                    <ActivityBar activeView={activeSidebarView} onIconClick={handleIconClick} />
-                </div>
-
-                {/* Left Sidebar */}
-                {isSidebarOpen && (
-                    <div
-                        style={{ width: leftPanelWidth }}
-                        className="flex-shrink-0 flex flex-col bg-[var(--bg-surface)] border-r border-[var(--border-default)] relative z-10"
-                    >
-                        {/* Sidebar Header */}
-                        <div className="h-9 flex items-center px-4 text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider border-b border-[var(--border-default)]">
-                            {activeSidebarView === 'explorer' && 'Explorer'}
-                            {activeSidebarView === 'search' && 'Search'}
-                            {activeSidebarView === 'git' && 'Source Control'}
-                            {activeSidebarView === 'extensions' && 'Extensions'}
-                            {activeSidebarView === 'settings' && 'Project Settings'}
-                        </div>
-
-                        {/* Sidebar Content */}
-                        <div className="flex-1 overflow-auto">
-                            {activeSidebarView === 'explorer' && (
-                                <div id="file-explorer-pane">
-                                    <FileExplorer />
-                                </div>
-                            )}
-                            {activeSidebarView === 'search' && (
-                                <div className="p-3">
-                                    <input
-                                        className="w-full h-8 px-3 bg-[var(--bg-surface-hover)] border border-[var(--border-default)] rounded text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-orange-500"
-                                        placeholder="Search..."
-                                    />
-                                </div>
-                            )}
-                            {activeSidebarView === 'git' && (
-                                <div className="p-4 text-sm text-[var(--text-secondary)] flex flex-col items-center justify-center h-full">
-                                    <GitBranch className="w-8 h-8 mb-2 opacity-30" />
-                                    <span>No changes</span>
-                                </div>
-                            )}
-                            {activeSidebarView === 'extensions' && (
-                                <div className="p-4 text-sm text-[var(--text-secondary)] flex flex-col items-center justify-center h-full">
-                                    <Blocks className="w-8 h-8 mb-2 opacity-30" />
-                                    <span>Marketplace coming soon</span>
-                                </div>
-                            )}
-                            {activeSidebarView === 'settings' && (
-                                <div className="p-4 space-y-6 animate-in fade-in slide-in-from-left-2 duration-300">
-                                    <ProjectSettingsPanel
-                                        project={projects.find(p => p.id === projectId)}
-                                        onUpdate={(updates) => projectId && updateProject(projectId, updates)}
-                                    />
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Resize Handle */}
-                        <div
-                            className="absolute top-0 bottom-0 right-0 w-1 cursor-col-resize hover:bg-orange-500/50 transition-colors"
-                            onMouseDown={startResize('left')}
-                        />
-                    </div>
-                )}
-
-                {/* Main Editor Area */}
-                <div id="editor-pane" className="flex-1 flex flex-col min-w-0 bg-[#1e1e1e] relative">
-                    {/* Editor Header / Tabs removed to prevent duplicate bars */}
-
-                    {/* Editor */}
-                    <div className="flex-1 min-h-0 flex flex-col relative bg-[var(--bg-canvas)]">
-                        <CodeEditor onSave={handleSave} />
-                    </div>
-
-                    {/* Terminal Resize Handle */}
-                    {isTerminalOpen && !isTerminalMaximized && (
-                        <div
-                            className="h-1 bg-[var(--bg-surface)] cursor-row-resize hover:bg-orange-500/50 transition-colors z-20 relative"
-                            onMouseDown={startResize('terminal')}
-                        />
-                    )}
-
-                    {/* Terminal */}
-                    {isTerminalOpen && (
-                        <div
-                            style={isTerminalMaximized ? {} : { height: terminalHeight }}
-                            className={cn(
-                                "flex-shrink-0 bg-[var(--bg-canvas)] border-t border-[var(--border-default)] z-30",
-                                isTerminalMaximized && "absolute inset-0"
-                            )}>
-                            <Terminal />
-                        </div>
-                    )}
-                </div>
-
-                {/* Right Panel (AI) */}
-                {isAIPanelOpen && (
-                    <>
-                        <div
-                            className="w-1 bg-[var(--bg-surface)] cursor-col-resize hover:bg-orange-500/50 transition-colors flex-shrink-0"
-                            onMouseDown={startResize('right')}
-                        />
-                        <div style={{ width: rightPanelWidth }} className="flex-shrink-0 bg-[var(--bg-surface)] border-l border-[var(--border-default)]">
-                            <AIPanel />
-                        </div>
-                    </>
-                )}
-            </div>
-
-            {/* Status Bar */}
-            <div className="h-[22px] bg-[#007acc] border-t border-[var(--border-default)] flex items-center px-3 text-[11px] text-white justify-between select-none flex-shrink-0">
-                <div className="flex items-center space-x-3">
-                    <span className="flex items-center">
-                        <GitBranch className="w-3 h-3 mr-1" />
-                        main
-                    </span>
-                    <span>0 errors</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                    <span>Ln 42, Col 18</span>
-                    <span>UTF-8</span>
-                    <span>TypeScript React</span>
-                    <span className="text-orange-500">● AI Active</span>
-                </div>
-            </div>
-        </div>
-    );
-}
-// Project Settings Panel Component
-function ProjectSettingsPanel({ project, onUpdate }: { project: any, onUpdate: (updates: any) => void }) {
-    if (!project) return null;
-
-    const sections = [
-        { label: 'Name', value: project.name, icon: FileCode },
-        { label: 'Status', value: project.status || 'Development', icon: Activity },
-        { label: 'Main Branch', value: project.branch || 'main', icon: GitBranch },
-        { label: 'Language', value: project.language, icon: Blocks },
-    ];
-
-    return (
-        <div className="space-y-6">
-            <div className="flex flex-col items-center text-center pb-2 border-b border-[var(--border-muted)]">
-                <div className="w-16 h-16 rounded-2xl bg-black border border-[var(--border-default)] flex items-center justify-center mb-4 shadow-lg shadow-black/20 overflow-hidden">
-                    <img src="/deexenlogo.png" alt="Logo" className="w-10 h-10 object-contain" />
-                </div>
-                <h3 className="font-display font-bold text-[var(--text-primary)] text-lg leading-tight">{project.name}</h3>
-                <p className="text-xs text-[var(--text-tertiary)] mt-1 tracking-wide uppercase font-medium">Project ID: {project.id.slice(0, 8)}</p>
-            </div>
-
-            <div className="space-y-4">
-                {sections.map((section, i) => (
-                    <div key={i} className="group">
-                        <div className="flex items-center gap-2 mb-1.5">
-                            <section.icon className="w-3.5 h-3.5 text-orange-500" />
-                            <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--text-tertiary)]">{section.label}</span>
-                        </div>
-                        <div className="px-3 py-2 bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-lg text-sm text-[var(--text-primary)] font-medium group-hover:border-orange-500/30 transition-colors">
-                            {section.value}
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            <div className="pt-2">
-                <div className="flex items-center gap-2 mb-3">
-                    <Sparkles className="w-3.5 h-3.5 text-violet-500" />
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--text-tertiary)]">Description</span>
-                </div>
-                <div className="p-3 bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs text-[var(--text-secondary)] leading-relaxed italic">
-                    {project.description || 'No description provided for this workspace.'}
-                </div>
-            </div>
-
-            <div className="pt-2">
-                <div className="flex items-center gap-2 mb-3">
-                    <Puzzle className="w-3.5 h-3.5 text-blue-500" />
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--text-tertiary)]">Tech Stack</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    {project.techStack?.length ? (
-                        project.techStack.map((tech: string) => (
-                            <span key={tech} className="px-2 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 rounded text-[10px] font-medium">
-                                {tech}
-                            </span>
-                        ))
-                    ) : (
-                        <span className="text-[10px] text-[var(--text-tertiary)] italic">Auto-detecting...</span>
-                    )}
-                </div>
-            </div>
-
-            <div className="pt-2">
-                <div className="flex items-center justify-between p-3 bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl hover:border-orange-500/30 transition-all group">
-                    <div className="flex items-center gap-3">
-                        <div className={cn(
-                            "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
-                            project.autoSave ? "bg-orange-500/20 text-orange-500" : "bg-[var(--bg-surface-hover)] text-[var(--text-tertiary)]"
-                        )}>
-                            <Activity className="w-4 h-4" />
-                        </div>
-                        <div>
-                            <div className="text-xs font-bold text-[var(--text-primary)]">Auto-save</div>
-                            <div className="text-[10px] text-[var(--text-tertiary)]">Save every 20 seconds</div>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => onUpdate({ autoSave: !project.autoSave })}
-                        className={cn(
-                            "w-10 h-5 rounded-full relative transition-colors duration-200 outline-none",
-                            project.autoSave ? "bg-orange-500" : "bg-[var(--border-default)]"
-                        )}
-                    >
-                        <div className={cn(
-                            "absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform duration-200 shadow-sm",
-                            project.autoSave ? "translate-x-5" : "translate-x-0"
-                        )} />
-                    </button>
-                </div>
-            </div>
+            )}
+            
+            {status === 'ready' && (
+                <iframe
+                    ref={iframeRef}
+                    src={`${VSCODE_SERVER_URL}/`}
+                    style={{
+                        flex: 1,
+                        width: '100%',
+                        height: '100%',
+                        border: 'none',
+                        zIndex: 1
+                    }}
+                    title="Deexen IDE Shell"
+                />
+            )}
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
     );
 }

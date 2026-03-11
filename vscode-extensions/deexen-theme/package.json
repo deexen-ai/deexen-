@@ -1,0 +1,22 @@
+{
+  "name": "deexen-theme",
+  "displayName": "Deexen Theme",
+  "description": "Custom Orange Dark Theme for Deexen IDE",
+  "version": "1.0.0",
+  "publisher": "deexen",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Themes"
+  ],
+  "contributes": {
+    "themes": [
+      {
+        "label": "Deexen Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/deexen-color-theme.json"
+      }
+    ]
+  }
+}

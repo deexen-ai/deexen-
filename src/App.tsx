@@ -15,6 +15,7 @@ import Toaster from '@/components/ui/Toaster';
 import ProjectsPage from '@/pages/ProjectsPage';
 import DeploymentsPage from '@/pages/DeploymentsPage';
 import WorkspacePage from '@/pages/WorkspacePage';
+import AIPanelPage from '@/pages/AIPanelPage';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -139,6 +140,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/ai-panel" element={<AIPanelPage />} />
         <Route path="/" element={<LandingPage />} />
       </Routes>
       <Toaster />
