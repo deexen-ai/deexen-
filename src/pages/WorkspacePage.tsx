@@ -1,180 +1,215 @@
-import { useEffect, useState, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useAuthStore } from '@/stores/useAuthStore';
-import { useProjectStore } from '@/stores/useProjectStore';
-import { projectService } from '@/services/projectService';
+import React, { useState, useEffect } from 'react';
+import { FileCode, Search, GitBranch, Settings, Sparkles } from 'lucide-react';
+import { cn } from '@/utils/cn';
+import FileExplorer from '@/components/file-explorer/FileExplorer';
+import CodeEditor from '@/components/editor/CodeEditor';
+import Terminal from '@/components/terminal/Terminal';
+import AIPanel from '@/components/ai-panel/AIPanel';
 
-const VSCODE_SERVER_URL = import.meta.env.VITE_VSCODE_URL || 'http://127.0.0.1:8080';
-
-export default function WorkspacePage() {
-    const navigate = useNavigate();
-    const { projectId } = useParams();
-    const { token } = useAuthStore();
-    const { projects } = useProjectStore();
-    const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-    const [errorMsg, setErrorMsg] = useState('');
-    const [currentProject, setCurrentProject] = useState<any>(null);
-    const iframeRef = useRef<HTMLIFrameElement>(null);
-
-    useEffect(() => {
-        let isMounted = true;
-        let timer: ReturnType<typeof setTimeout>;
-
-        if (!projectId) {
-            navigate('/dashboard');
-            return;
-        }
-
-        const bootWorkspace = async () => {
-            if (!token) {
-                navigate('/login');
-                return;
-            }
-
-            try {
-                let project = projects.find(p => p.id === projectId);
-
-                if (!project) {
-                    // Fetch project fallback when store is initially empty
-                    project = await projectService.getProject(projectId) as any;
-                }
-
-                if (!isMounted) return;
-
-                if (!project) {
-                    setStatus('error');
-                    setErrorMsg('Project not found. It may have been deleted.');
-                    return;
-                }
-
-                setCurrentProject(project);
-
-                // Simulating the backend startup for the VS Code process wrapper
-                timer = setTimeout(() => {
-                    if (isMounted) setStatus('ready');
-                }, 1500);
-
-            } catch (err: any) {
-                if (isMounted) {
-                    setStatus('error');
-                    setErrorMsg(err.message || 'Error occurred while loading project');
-                }
-            }
-        };
-
-        bootWorkspace();
-
-        return () => {
-            isMounted = false;
-            if (timer) clearTimeout(timer);
-        };
-    }, [projectId, token, projects, navigate]);
-
-    // Handle messages coming from the VS Code Webview
-    useEffect(() => {
-        const handleMessage = (event: MessageEvent) => {
-            // Ensure we aren't listening to completely arbitrary windows
-            if (event.data?.type === 'DEEXEN_VSCODE_AI_READY') {
-                // The AI Webview inside the VS Code server initialized.
-                // We send it the React API route and Token so it can render the core Chat UI.
-                const aiPanelUrl = window.location.origin + '/ai-panel';
-                event.source?.postMessage(
-                    {
-                        type: 'DEEXEN_LOAD_AI',
-                        url: aiPanelUrl,
-                        token: token,
-                        projectId: projectId
-                    },
-                    { targetOrigin: '*' }
-                );
-            }
-        };
-
-        window.addEventListener('message', handleMessage);
-        return () => window.removeEventListener('message', handleMessage);
-    }, [token, projectId]);
-
-    const project = currentProject || projects.find(p => p.id === projectId);
+// Activity Bar Component
+const ActivityBar = ({ activeView, setActiveView }: { activeView: string, setActiveView: (v: string) => void }) => {
+    const icons = [
+        { id: 'explorer', icon: FileCode, label: 'Explorer' },
+        { id: 'search', icon: Search, label: 'Search' },
+        { id: 'git', icon: GitBranch, label: 'Source Control' },
+        { id: 'ai', icon: Sparkles, label: 'AI Assistant' },
+    ];
 
     return (
-        <div style={{
-            height: '100vh',
-            width: '100vw',
-            background: '#0c0c0c',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontFamily: 'Inter, -apple-system, sans-serif',
-            overflow: 'hidden'
-        }}>
-            {status !== 'ready' && (
-                <div style={{
-                    position: 'absolute', inset: 0, zIndex: 10,
-                    display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', justifyContent: 'center',
-                    background: '#0c0c0c', gap: 24
-                }}>
-                    {status === 'error' ? (
-                        <>
-                            <div style={{ fontSize: 40 }}>⚠️</div>
-                            <p style={{ color: '#f87171', fontSize: 15, fontWeight: 600 }}>{errorMsg}</p>
-                            <button
-                                onClick={() => navigate('/dashboard')}
-                                style={{
-                                    background: '#f97316', color: '#fff', border: 'none',
-                                    borderRadius: 8, padding: '10px 24px', fontSize: 13,
-                                    fontWeight: 700, cursor: 'pointer',
-                                }}
-                            >
-                                Back to Dashboard
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <img
-                                src='/deexenlogo.png'
-                                alt='Deexen'
-                                style={{ width: 52, height: 52, objectFit: 'contain' }}
-                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                            />
-                            <div style={{ position: 'relative', width: 48, height: 48 }}>
-                                <div style={{
-                                    position: 'absolute', inset: 0,
-                                    border: '3px solid rgba(249,115,22,0.15)',
-                                    borderTopColor: '#f97316',
-                                    borderRadius: '50%',
-                                    animation: 'spin 0.8s linear infinite',
-                                }} />
-                            </div>
-                            <div style={{ textAlign: 'center' }}>
-                                <p style={{ color: '#d4d4d4', fontSize: 15, fontWeight: 600, marginBottom: 6 }}>
-                                    Starting Deexen Cloud Environment…
-                                </p>
-                                <p style={{ color: '#4b5563', fontSize: 12 }}>
-                                    Booting project "{project?.name || 'Loading'}" • Powered by VS Code
-                                </p>
-                            </div>
-                        </>
+        <div className="w-12 bg-[#0a0a0a] border-r border-neutral-800 flex flex-col items-center py-2 flex-shrink-0">
+            {icons.map(item => (
+                <button
+                    key={item.id}
+                    onClick={() => setActiveView(item.id)}
+                    title={item.label}
+                    className={cn(
+                        "w-10 h-10 flex items-center justify-center relative transition-colors",
+                        activeView === item.id
+                            ? "text-white"
+                            : "text-neutral-600 hover:text-neutral-400"
                     )}
+                >
+                    {activeView === item.id && (
+                        <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-orange-500" />
+                    )}
+                    <item.icon className="w-5 h-5" />
+                </button>
+            ))}
+
+            <div className="flex-1" />
+
+            <button
+                title="Settings"
+                className="w-10 h-10 flex items-center justify-center text-neutral-600 hover:text-neutral-400 transition-colors"
+            >
+                <Settings className="w-5 h-5" />
+            </button>
+        </div>
+    );
+};
+
+export default function WorkspacePage() {
+    const [activeSidebarView, setActiveSidebarView] = useState('explorer');
+    const [leftPanelWidth, setLeftPanelWidth] = useState(240);
+    const [rightPanelWidth, setRightPanelWidth] = useState(320);
+    const [terminalHeight, setTerminalHeight] = useState(200);
+    const [isDragging, setIsDragging] = useState<'left' | 'right' | 'terminal' | null>(null);
+    const [showRightPanel, setShowRightPanel] = useState(true);
+
+    useEffect(() => {
+        if (activeSidebarView === 'ai') {
+            setShowRightPanel(true);
+        }
+    }, [activeSidebarView]);
+
+    const startResize = (direction: 'left' | 'right' | 'terminal') => (e: React.MouseEvent) => {
+        e.preventDefault();
+        setIsDragging(direction);
+    };
+
+    useEffect(() => {
+        if (!isDragging) return;
+
+        const onMouseMove = (e: MouseEvent) => {
+            if (isDragging === 'left') {
+                const newWidth = e.clientX - 48;
+                if (newWidth > 150 && newWidth < 400) setLeftPanelWidth(newWidth);
+            } else if (isDragging === 'right') {
+                const newWidth = window.innerWidth - e.clientX;
+                if (newWidth > 200 && newWidth < 500) setRightPanelWidth(newWidth);
+            } else if (isDragging === 'terminal') {
+                const newHeight = window.innerHeight - e.clientY - 22;
+                if (newHeight > 100 && newHeight < window.innerHeight - 200) setTerminalHeight(newHeight);
+            }
+        };
+
+        const onMouseUp = () => setIsDragging(null);
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+        return () => {
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+        };
+    }, [isDragging]);
+
+    return (
+        <div className={cn(
+            "h-screen w-screen flex flex-col bg-[#0a0a0a] overflow-hidden text-white font-sans",
+            isDragging && "cursor-grabbing select-none"
+        )}>
+            {/* Title Bar */}
+            <div className="h-8 bg-[#0a0a0a] border-b border-neutral-800 flex items-center px-3 text-xs select-none">
+                <div className="flex items-center space-x-2">
+                    <img src="/deexenlogo.png" alt="Deexen" className="h-4" />
+                    <span className="text-neutral-400">Deexen</span>
                 </div>
-            )}
-            
-            {status === 'ready' && (
-                <iframe
-                    ref={iframeRef}
-                    src={`${VSCODE_SERVER_URL}/`}
-                    style={{
-                        flex: 1,
-                        width: '100%',
-                        height: '100%',
-                        border: 'none',
-                        zIndex: 1
-                    }}
-                    title="Deexen IDE Shell"
-                />
-            )}
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                <div className="flex-1 flex items-center justify-center">
+                    <span className="text-white">deexen-frontend</span>
+                    <span className="text-neutral-600 mx-2">—</span>
+                    <span className="text-neutral-500">src/App.tsx</span>
+                </div>
+            </div>
+
+            {/* Main Layout */}
+            <div className="flex-1 flex overflow-hidden">
+                {/* Activity Bar */}
+                <ActivityBar activeView={activeSidebarView} setActiveView={setActiveSidebarView} />
+
+                {/* Left Sidebar */}
+                <div
+                    style={{ width: leftPanelWidth }}
+                    className="flex-shrink-0 flex flex-col bg-[#0f0f0f] border-r border-neutral-800 relative"
+                >
+                    {/* Sidebar Header */}
+                    <div className="h-9 flex items-center px-4 text-xs font-medium text-neutral-400 uppercase tracking-wider border-b border-neutral-800">
+                        {activeSidebarView === 'explorer' && 'Explorer'}
+                        {activeSidebarView === 'search' && 'Search'}
+                        {activeSidebarView === 'git' && 'Source Control'}
+                        {activeSidebarView === 'ai' && 'AI Assistant'}
+                    </div>
+
+                    {/* Sidebar Content */}
+                    <div className="flex-1 overflow-auto">
+                        {activeSidebarView === 'explorer' && <FileExplorer />}
+                        {activeSidebarView === 'search' && (
+                            <div className="p-3">
+                                <input
+                                    className="w-full h-8 px-3 bg-[#141414] border border-neutral-800 rounded text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-orange-500"
+                                    placeholder="Search..."
+                                />
+                            </div>
+                        )}
+                        {activeSidebarView === 'git' && (
+                            <div className="p-4 text-sm text-neutral-500 flex flex-col items-center justify-center h-full">
+                                <GitBranch className="w-8 h-8 mb-2 opacity-30" />
+                                <span>No changes</span>
+                            </div>
+                        )}
+                        {activeSidebarView === 'ai' && (
+                            <div className="p-4 text-sm text-neutral-500 flex flex-col items-center justify-center h-full">
+                                <Sparkles className="w-8 h-8 mb-2 opacity-30" />
+                                <span>AI panel on right →</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Resize Handle */}
+                    <div
+                        className="absolute top-0 bottom-0 right-0 w-1 cursor-col-resize hover:bg-orange-500/50 transition-colors"
+                        onMouseDown={startResize('left')}
+                    />
+                </div>
+
+                {/* Center Area */}
+                <div className="flex-1 flex flex-col min-w-0">
+                    {/* Editor */}
+                    <div className="flex-1 min-h-0 bg-[#0a0a0a]">
+                        <CodeEditor />
+                    </div>
+
+                    {/* Terminal Resize Handle */}
+                    <div
+                        className="h-1 bg-[#0f0f0f] cursor-row-resize hover:bg-orange-500/50 transition-colors"
+                        onMouseDown={startResize('terminal')}
+                    />
+
+                    {/* Terminal */}
+                    <div style={{ height: terminalHeight }} className="flex-shrink-0 bg-[#0a0a0a] border-t border-neutral-800">
+                        <Terminal />
+                    </div>
+                </div>
+
+                {/* Right Panel (AI) */}
+                {showRightPanel && (
+                    <>
+                        <div
+                            className="w-1 bg-[#0f0f0f] cursor-col-resize hover:bg-orange-500/50 transition-colors flex-shrink-0"
+                            onMouseDown={startResize('right')}
+                        />
+                        <div style={{ width: rightPanelWidth }} className="flex-shrink-0 bg-[#0f0f0f] border-l border-neutral-800">
+                            <AIPanel />
+                        </div>
+                    </>
+                )}
+            </div>
+
+            {/* Status Bar */}
+            <div className="h-[22px] bg-[#0f0f0f] border-t border-neutral-800 flex items-center px-3 text-[11px] text-neutral-500 justify-between select-none">
+                <div className="flex items-center space-x-3">
+                    <span className="flex items-center">
+                        <GitBranch className="w-3 h-3 mr-1" />
+                        main
+                    </span>
+                    <span>0 errors</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                    <span>Ln 42, Col 18</span>
+                    <span>UTF-8</span>
+                    <span>TypeScript React</span>
+                    <span className="text-orange-500">● AI Active</span>
+                </div>
+            </div>
         </div>
     );
 }

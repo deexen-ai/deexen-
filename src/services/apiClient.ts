@@ -18,10 +18,9 @@ class ApiClient {
     private useMock: boolean;
 
     constructor() {
-        this.baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-        // Default to real API. Only use mock if explicitly set to 'true'
-        const mockEnv = import.meta.env.VITE_USE_MOCK;
-        this.useMock = mockEnv === 'true';
+        this.baseUrl = 'http://localhost:3000/api';
+        // Always use mock data since backend is disconnected
+        this.useMock = true;
     }
 
     private getToken(): string | null {

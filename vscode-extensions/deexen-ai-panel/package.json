@@ -27,7 +27,8 @@
         {
           "type": "webview",
           "id": "deexenAIView",
-          "name": "AI Assistant"
+          "name": "AI Assistant",
+          "icon": "$(hubot)"
         }
       ]
     }
