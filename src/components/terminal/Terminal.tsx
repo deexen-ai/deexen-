@@ -1,111 +1,49 @@
 import { useState, useRef, useEffect } from 'react';
 import { Plus, ChevronDown, MoreHorizontal, Maximize, Minimize2, X, TerminalSquare, AlertTriangle, Trash2 } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { useFileStore } from '@/stores/useFileStore';
 import { useLayoutStore } from '@/stores/useLayoutStore';
 import { useTerminalStore } from '@/stores/useTerminalStore';
-import { Terminal as XTerm } from 'xterm';
-import { FitAddon } from 'xterm-addon-fit';
-import 'xterm/css/xterm.css';
 
 export default function Terminal() {
     const [activeTab, setActiveTab] = useState<'Problems' | 'Output' | 'Debug Console' | 'Terminal' | 'Ports'>('Terminal');
+    const { projectName } = useFileStore();
     const { setTerminalOpen, toggleTerminalMaximized, isTerminalMaximized } = useLayoutStore();
-    const {
-        sessions,
-        activeSessionId,
-        addSession,
-        deleteActiveSession,
-        setActiveSession,
-        connect,
-        disconnect,
-        socket,
-        sendInput,
-        resizeTerminal
-    } = useTerminalStore();
+    const { history, sessions, activeSessionId, addSession, deleteActiveSession, setActiveSession, executeCommand } = useTerminalStore();
 
-    const terminalRef = useRef<HTMLDivElement>(null);
-    const xtermRef = useRef<XTerm | null>(null);
-    const fitAddonRef = useRef<FitAddon | null>(null);
+    const [command, setCommand] = useState('');
+    const inputRef = useRef<HTMLInputElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-    // Initialize Store Connection
     useEffect(() => {
-        connect();
-        return () => disconnect();
-    }, []);
-
-    // Initialize XTerm
-    useEffect(() => {
-        if (!terminalRef.current || activeTab !== 'Terminal') return;
-
-        const term = new XTerm({
-            cursorBlink: true,
-            fontSize: 13,
-            fontFamily: 'JetBrains Mono, Menlo, Monaco, "Courier New", monospace',
-            theme: {
-                background: '#181818',
-                foreground: '#cccccc',
-                cursor: '#cccccc',
-                selectionBackground: '#ffffff33',
-            },
-            allowProposedApi: true
-        });
-
-        const fitAddon = new FitAddon();
-        term.loadAddon(fitAddon);
-        term.open(terminalRef.current);
-        fitAddon.fit();
-
-        term.onData(data => {
-            sendInput(data);
-        });
-
-        term.onResize(size => {
-            resizeTerminal(size.cols, size.rows);
-        });
-
-        xtermRef.current = term;
-        fitAddonRef.current = fitAddon;
-
-        // Write any buffered data if needed (optional)
-
-        return () => {
-            term.dispose();
-            xtermRef.current = null;
-        };
-    }, [activeTab]); // Re-initialize when switching back to Terminal tab
-
-    // Handle incoming data
-    useEffect(() => {
-        if (!socket || !xtermRef.current) return;
-
-        const handleData = (data: string) => {
-            xtermRef.current?.write(data);
-        };
-
-        socket.on('terminal.data', handleData);
-        return () => {
-            socket.off('terminal.data', handleData);
-        };
-    }, [socket, activeTab]);
-
-    // Handle resize on panel change
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            fitAddonRef.current?.fit();
-        }, 100);
-        return () => clearTimeout(timer);
-    }, [isTerminalMaximized, activeTab]);
+        if (activeTab === 'Terminal' && scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({
+                top: scrollContainerRef.current.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+    }, [history, activeTab]);
 
     const handleAddSession = () => {
-        addSession('terminal');
+        addSession('pwsh');
     };
 
     const handleDeleteSession = () => {
         deleteActiveSession();
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            executeCommand(command, projectName);
+            setCommand('');
+        }
+    };
+
     return (
-        <div className="h-full bg-[#181818] flex flex-col font-mono text-[13px] overflow-hidden text-[#cccccc]">
+        <div
+            className="h-full bg-[#181818] flex flex-col font-mono text-[13px] overflow-hidden text-[#cccccc]"
+            onClick={() => activeTab === 'Terminal' && inputRef.current?.focus()}
+        >
             {/* Tabs Header */}
             <div className="h-9 px-4 flex items-center flex-shrink-0 select-none gap-4 border-b border-[#2b2b2b]">
                 {['Problems', 'Output', 'Debug Console', 'Terminal', 'Ports'].map((tab) => (
@@ -170,14 +108,42 @@ export default function Terminal() {
 
             {/* Content Area */}
             <div className="flex-1 flex overflow-hidden">
-                {activeTab === 'Terminal' ? (
+                {activeTab === 'Terminal' && (
                     <>
                         {/* Main Terminal View */}
-                        <div className="flex-1 h-full relative overflow-hidden">
-                            <div
-                                ref={terminalRef}
-                                className="absolute inset-0 p-3 xterm-container"
-                            />
+                        <div
+                            ref={scrollContainerRef}
+                            className="flex-1 h-full pl-5 pr-2 py-3 overflow-auto cursor-text"
+                            onClick={() => inputRef.current?.focus()}
+                        >
+                            {sessions.length === 0 ? (
+                                <div className="text-[#808080] italic px-2">No terminal sessions active. Click '+' to start a new session.</div>
+                            ) : (
+                                <div className="font-mono text-[13px] leading-relaxed">
+                                    {history.map((line) => (
+                                        <div key={line.id} className="mb-1">
+                                            {line.content}
+                                        </div>
+                                    ))}
+                                    <div className="flex items-center">
+                                        {/* Left margin circle indicator */}
+                                        <div className="mr-[18px] shrink-0">
+                                            <div className="h-2 w-2 rounded-full border border-[#4d4d4d]" />
+                                        </div>
+                                        <span className="text-[#cccccc] mr-1 whitespace-nowrap">PS C:\Users\11ara\github\{projectName?.toLowerCase().replace(/\s+/g, '-') || 'deexen-frontend'}&gt;</span>
+                                        <input
+                                            ref={inputRef}
+                                            type="text"
+                                            value={command}
+                                            onChange={(e) => setCommand(e.target.value)}
+                                            onKeyDown={handleKeyDown}
+                                            className="bg-transparent border-none outline-none text-[#cccccc] flex-1 min-w-[50px] font-mono text-[13px]"
+                                            autoFocus
+                                            spellCheck={false}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Right Sidebar (Terminal Sessions) */}
@@ -205,48 +171,11 @@ export default function Terminal() {
                             ))}
                         </div>
                     </>
-                ) : activeTab === 'Problems' ? (
-                    <div className="flex-1 flex flex-col p-4 overflow-auto">
-                        <div className="flex items-center gap-2 text-[#8c8c8c] mb-4">
-                            <span className="font-bold">0</span> Problems
-                        </div>
-                        <div className="text-[12px] text-[#8c8c8c] italic">
-                            No problems have been detected in the workspace so far.
-                        </div>
-                    </div>
-                ) : activeTab === 'Output' ? (
-                    <div className="flex-1 flex flex-col p-4 overflow-auto font-mono text-[12px]">
-                        <div className="flex items-center gap-2 text-[#8c8c8c] mb-2 border-b border-[#2b2b2b] pb-2">
-                            <span>Show output from:</span>
-                            <select className="bg-[#1e1e1e] border border-[#3c3c3c] rounded px-1 text-[#cccccc] outline-none">
-                                <option>Tasks</option>
-                                <option>Extension Host</option>
-                                <option>GitHub Authentication</option>
-                            </select>
-                        </div>
-                        <div className="text-[#8c8c8c]">
-                            [info] Initializing extension host...
-                            <br />
-                            [info] Finished loading extensions.
-                        </div>
-                    </div>
-                ) : activeTab === 'Debug Console' ? (
-                    <div className="flex-1 flex flex-col p-4 overflow-auto font-mono text-[12px]">
-                        <div className="text-[#8c8c8c] italic">
-                            The debug console is empty. Start a debug session to see output here.
-                        </div>
-                        <div className="mt-auto flex items-center border-t border-[#2b2b2b] pt-2">
-                            <span className="text-blue-500 mr-2">&gt;</span>
-                            <input
-                                className="bg-transparent border-none outline-none text-[#cccccc] flex-1"
-                                placeholder="Type a debug command or expression"
-                                readOnly
-                            />
-                        </div>
-                    </div>
-                ) : (
+                )}
+
+                {activeTab !== 'Terminal' && (
                     <div className="p-4 text-[#8c8c8c] flex-1">
-                        {activeTab} content goes here...
+                        {/* Empty Space for other tabs */}
                     </div>
                 )}
             </div>

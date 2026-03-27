@@ -17,7 +17,7 @@ type ProjectType = 'blank' | 'template' | 'import';
 export default function NewProjectModal({ isOpen, onClose }: NewProjectModalProps) {
     if (!isOpen) return null;
 
-    const { createProjectAPI } = useProjectStore();
+    const { addProject } = useProjectStore();
     const { addToast } = useToastStore();
     const [step, setStep] = useState<Step>('select-type');
 
@@ -40,22 +40,26 @@ export default function NewProjectModal({ isOpen, onClose }: NewProjectModalProp
 
         setIsCreating(true);
 
-        try {
-            await createProjectAPI(name, description);
+        // Simulate extraction/creation delay
+        setTimeout(() => {
+            addProject({
+                name,
+                description,
+                language: 'Plain Text', // Default until extraction
+                techStack: [], // To be extracted later
+                fullDescription: description,
+                features: ['Initialized Project'],
+                architecture: 'Empty Project',
+                fileStructure: '/src'
+            });
+            setIsCreating(false);
             addToast(`Project "${name}" created successfully!`, 'success');
             onClose();
             // Reset state
             setStep('select-type');
             setName('');
             setDescription('');
-        } catch (error: unknown) {
-            const message = error && typeof error === 'object' && 'message' in error
-                ? (error as { message: string }).message
-                : 'Failed to create project';
-            addToast(message, 'error');
-        } finally {
-            setIsCreating(false);
-        }
+        }, 1000);
     };
 
     const projectTypes = [

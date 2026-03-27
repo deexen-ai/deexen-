@@ -21,16 +21,11 @@ export default function DashboardPage() {
     const { user } = useAuthStore();
     const { theme, toggleTheme } = useThemeStore();
     const { isSidebarOpen } = useLayoutStore();
-    const { projects, fetchProjects } = useProjectStore();
+    const { projects } = useProjectStore();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
-
-    // Fetch real projects from API on mount
-    useEffect(() => {
-        fetchProjects();
-    }, [fetchProjects]);
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -81,11 +76,15 @@ export default function DashboardPage() {
             )}>
                 {/* Sticky Header */}
                 <header className="sticky top-0 z-40 w-full h-16 glass-panel border-b border-[var(--border-muted)] flex items-center justify-between px-8">
-                    {/* Breadcrumbs */}
                     <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                        <img 
+                            src="/deexenlogo.png" 
+                            alt="" 
+                            className="w-5 h-5 object-contain" 
+                        />
                         <span
                             onClick={() => navigate('/dashboard')}
-                            className="hover:text-[var(--text-primary)] cursor-pointer transition-colors"
+                            className="hover:text-[var(--text-primary)] cursor-pointer transition-colors font-semibold"
                         >
                             deexen
                         </span>
@@ -251,7 +250,7 @@ interface ProjectRowProps {
 
 function ProjectRow({ project, onClick }: ProjectRowProps) {
     const { setTriggerMessage, setChatOpen } = useAIStore();
-    const { deleteProjectAPI } = useProjectStore();
+    const { deleteProject } = useProjectStore();
     const { addToast } = useToastStore();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -277,15 +276,11 @@ function ProjectRow({ project, onClick }: ProjectRowProps) {
         setIsMenuOpen(false);
     };
 
-    const handleDeleteClick = async (e: React.MouseEvent) => {
+    const handleDeleteClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (window.confirm(`Are you sure you want to delete "${project.name}"?`)) {
-            try {
-                await deleteProjectAPI(project.id);
-                addToast(`Project "${project.name}" deleted.`, 'info');
-            } catch {
-                addToast('Failed to delete project.', 'error');
-            }
+            deleteProject(project.id);
+            addToast(`Project "${project.name}" deleted.`, 'info');
         }
         setIsMenuOpen(false);
     };

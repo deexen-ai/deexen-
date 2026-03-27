@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authService, type User } from '@/services/authService';
-import { supabase } from '@/services/supabaseClient';
 
 interface AuthState {
     user: User | null;
@@ -18,86 +17,46 @@ interface AuthState {
     updateUser: (updates: Partial<User>) => void;
 }
 
-function mapSupabaseUser(supaUser: { id: string; email?: string; user_metadata?: Record<string, string>; created_at: string }, accessToken: string) {
-    const user: User = {
-        id: supaUser.id,
-        name: supaUser.user_metadata?.name || supaUser.user_metadata?.full_name || supaUser.email?.split('@')[0] || 'User',
-        email: supaUser.email || '',
-        avatar: supaUser.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(supaUser.email || 'U')}&background=ea580c&color=fff`,
-        joinDate: new Date(supaUser.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        lastActive: 'Just now',
-        onboardingCompleted: true,
-    };
-    return { user, token: accessToken };
-}
-
 export const useAuthStore = create<AuthState>()(
     persist(
         (set) => ({
             user: null,
             token: null,
             isAuthenticated: false,
-            isInitializing: true, // Start as true — we need to check Supabase session first
+            isInitializing: true, // Start as true — we need to check session first
             isLoading: false,
             error: null,
 
             initialize: () => {
-                // 1. Check for an existing Supabase session (handles OAuth redirects)
-                supabase.auth.getSession().then(({ data: { session } }) => {
-                    if (session?.user && session?.access_token) {
-                        const { user, token } = mapSupabaseUser(session.user, session.access_token);
-                        set({
-                            user,
-                            token,
-                            isAuthenticated: true,
-                            isInitializing: false,
-                        });
-                    } else {
-                        // No Supabase session — rely on persisted Zustand state
-                        set({ isInitializing: false });
-                    }
-                }).catch(() => {
+                // Delay slightly to simulate init, then rely on persisted state
+                setTimeout(() => {
                     set({ isInitializing: false });
-                });
-
-                // 2. Listen for future auth state changes (token refresh, sign-out, etc.)
-                supabase.auth.onAuthStateChange((_event, session) => {
-                    if (session?.user && session?.access_token) {
-                        const { user, token } = mapSupabaseUser(session.user, session.access_token);
-                        set({
-                            user,
-                            token,
-                            isAuthenticated: true,
-                            isInitializing: false,
-                        });
-                    } else if (_event === 'SIGNED_OUT') {
-                        set({
-                            user: null,
-                            token: null,
-                            isAuthenticated: false,
-                            isInitializing: false,
-                        });
-                    }
-                });
+                }, 100);
             },
 
             login: async (email, password) => {
                 set({ isLoading: true, error: null });
 
                 try {
-                    console.log(`[useAuthStore] Attempting Supabase login for ${email}...`);
-                    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-                    if (error) {
-                        console.error(`[useAuthStore] Supabase login error:`, error.message, error.status);
-                        throw error;
-                    }
-                    if (!data.user || !data.session) throw new Error('Login failed: No session data returned');
+                    // Mock login
+                    const mockUser: User = {
+                        id: 'mock-user-123',
+                        name: email.split('@')[0] || 'User',
+                        email: email,
+                        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(email || 'U')}&background=ea580c&color=fff`,
+                        joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+                        lastActive: 'Just now',
+                        onboardingCompleted: true,
+                    };
+                    
+                    // Simulate network delay
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                    
+                    if (password === 'wrong') throw new Error('Invalid credentials');
 
-                    console.log(`[useAuthStore] Supabase login successful for ${email}`);
-                    const { user, token } = mapSupabaseUser(data.user, data.session.access_token);
                     set({
-                        user,
-                        token,
+                        user: mockUser,
+                        token: 'mock-jwt-token-123',
                         isAuthenticated: true,
                         isLoading: false,
                     });
@@ -105,7 +64,6 @@ export const useAuthStore = create<AuthState>()(
                     const message = error && typeof error === 'object' && 'message' in error
                         ? (error as { message: string }).message
                         : 'Login failed';
-                    console.error(`[useAuthStore] Login catch block:`, message);
                     set({ error: message, isLoading: false });
                     throw error;
                 }
@@ -115,38 +73,31 @@ export const useAuthStore = create<AuthState>()(
                 set({ isLoading: true, error: null });
 
                 try {
-                    console.log(`[useAuthStore] Attempting Supabase signup for ${email}...`);
-                    const { data, error } = await supabase.auth.signUp({
-                        email,
-                        password,
-                        options: { data: { name, full_name: name } },
-                    });
-                    if (error) {
-                        console.error(`[useAuthStore] Supabase signup error:`, error.message, error.status);
-                        throw error;
-                    }
-                    if (!data.user) throw new Error('Registration failed: No user data returned');
+                    if (password.length < 6) throw new Error('Password must be at least 6 characters');
+                    // Mock register
+                    const mockUser: User = {
+                        id: 'mock-user-456',
+                        name: name,
+                        email: email,
+                        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'U')}&background=ea580c&color=fff`,
+                        joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+                        lastActive: 'Just now',
+                        onboardingCompleted: true,
+                    };
 
-                    console.log(`[useAuthStore] Supabase signup successful for ${email}`);
-                    // If email confirmation is required, session may be null
-                    if (data.session) {
-                        const { user, token } = mapSupabaseUser(data.user, data.session.access_token);
-                        set({
-                            user,
-                            token,
-                            isAuthenticated: true,
-                            isLoading: false,
-                        });
-                    } else {
-                        // Email confirmation required — user needs to check inbox
-                        console.log(`[useAuthStore] Email confirmation required for ${email}`);
-                        set({ isLoading: false });
-                    }
+                    // Simulate network delay
+                    await new Promise(resolve => setTimeout(resolve, 800));
+
+                    set({
+                        user: mockUser,
+                        token: 'mock-jwt-token-456',
+                        isAuthenticated: true,
+                        isLoading: false,
+                    });
                 } catch (error: unknown) {
                     const message = error && typeof error === 'object' && 'message' in error
                         ? (error as { message: string }).message
                         : 'Registration failed';
-                    console.error(`[useAuthStore] Register catch block:`, message);
                     set({ error: message, isLoading: false });
                     throw error;
                 }
@@ -154,7 +105,6 @@ export const useAuthStore = create<AuthState>()(
 
             logout: () => {
                 authService.logout();
-                supabase.auth.signOut();
                 set({ user: null, token: null, isAuthenticated: false, error: null });
             },
 

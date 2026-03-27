@@ -1,13 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import Editor, { loader } from '@monaco-editor/react';
 import { X, FileCode, Play } from 'lucide-react';
 import { useFileStore } from '@/stores/useFileStore';
 import { useThemeStore } from '@/stores/useThemeStore';
 import { useLayoutStore } from '@/stores/useLayoutStore';
 import { useTerminalStore } from '@/stores/useTerminalStore';
-import { useParams } from 'react-router-dom';
-import { projectService } from '@/services/projectService';
 import { cn } from '@/utils/cn';
+
 // Configure Monaco loader to use the CDN
 loader.config({
     paths: {
@@ -15,36 +14,27 @@ loader.config({
     }
 });
 
-export default function CodeEditor() {
-    const { openFiles, activeFileId, files, closeFile, selectFile, updateFileContent } = useFileStore();
+interface CodeEditorProps {
+    onSave?: () => void;
+}
+
+export default function CodeEditor({ onSave }: CodeEditorProps) {
+    const { openFiles, activeFileId, files, closeFile, selectFile, updateFileContent, projectName } = useFileStore();
     const { theme } = useThemeStore();
-    const { isAIPanelOpen, toggleAIPanel, setTerminalOpen, isTerminalOpen } = useLayoutStore();
-    const { sendInput } = useTerminalStore();
-    const { projectId } = useParams();
-    const saveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    const { isAIPanelOpen, toggleAIPanel, setTerminalOpen } = useLayoutStore();
+    const { executeCommand } = useTerminalStore();
+
+    const saveRef = useRef(onSave);
+    useEffect(() => {
+        saveRef.current = onSave;
+    }, [onSave]);
 
     const [activeContent, setActiveContent] = React.useState('');
     const [activeLanguage, setActiveLanguage] = React.useState('typescript');
 
     const handleRun = () => {
-        if (!isTerminalOpen) {
-            setTerminalOpen(true);
-        }
-
-        let runCommand = "npm run dev\\r";
-
-        if (activeLanguage === 'python') {
-            const fileName = activeFileId?.split('/').pop() || 'main.py';
-            runCommand = `python ${fileName}\\r`;
-        } else if (activeLanguage === 'javascript') {
-            const fileName = activeFileId?.split('/').pop() || 'index.js';
-            runCommand = `node ${fileName}\\r`;
-        }
-
-        // Timeout to ensure terminal is mounted/connected if it was just opened
-        setTimeout(() => {
-            sendInput(runCommand);
-        }, 100);
+        setTerminalOpen(true);
+        executeCommand('npm run dev', projectName || 'project');
     };
 
     const findFileContent = (fileId: string) => {
@@ -164,15 +154,6 @@ export default function CodeEditor() {
                             if (activeFileId && value !== undefined) {
                                 setActiveContent(value);
                                 updateFileContent(activeFileId, value);
-
-                                if (projectId && !activeFileId.includes('root') && !activeFileId.includes('project')) {
-                                    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-                                    saveTimeoutRef.current = setTimeout(() => {
-                                        projectService.saveFile(projectId, activeFileId, value).catch(err => {
-                                            console.error("Failed to auto-save file:", err);
-                                        });
-                                    }, 1000);
-                                }
                             }
                         }}
                         options={{
@@ -190,6 +171,16 @@ export default function CodeEditor() {
                             cursorBlinking: 'smooth',
                             cursorWidth: 2,
                             smoothScrolling: true,
+                        }}
+                        onMount={(editor, monaco) => {
+                            editor.addAction({
+                                id: 'save-project',
+                                label: 'Save Project',
+                                keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
+                                run: () => {
+                                    if (saveRef.current) saveRef.current();
+                                }
+                            });
                         }}
                         beforeMount={(monaco) => {
                             monaco.editor.defineTheme('deexen-dark', {

@@ -22,15 +22,10 @@ export default function ProjectsPage() {
     const { user } = useAuthStore();
     const { isSidebarOpen } = useLayoutStore();
     const { theme, toggleTheme } = useThemeStore();
-    const { projects, fetchProjects } = useProjectStore();
+    const { projects } = useProjectStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
-
-    // Fetch real projects from API on mount
-    useEffect(() => {
-        fetchProjects();
-    }, [fetchProjects]);
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -168,7 +163,7 @@ interface ProjectRowProps {
 
 function ProjectRow({ project, onClick }: ProjectRowProps) {
     const { setTriggerMessage, setChatOpen } = useAIStore();
-    const { deleteProjectAPI } = useProjectStore();
+    const { deleteProject } = useProjectStore();
     const { addToast } = useToastStore();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -194,15 +189,11 @@ function ProjectRow({ project, onClick }: ProjectRowProps) {
         setIsMenuOpen(false);
     };
 
-    const handleDeleteClick = async (e: React.MouseEvent) => {
+    const handleDeleteClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (window.confirm(`Are you sure you want to delete "${project.name}"?`)) {
-            try {
-                await deleteProjectAPI(project.id);
-                addToast(`Project "${project.name}" deleted.`, 'info');
-            } catch {
-                addToast('Failed to delete project.', 'error');
-            }
+            deleteProject(project.id);
+            addToast(`Project "${project.name}" deleted.`, 'info');
         }
         setIsMenuOpen(false);
     };

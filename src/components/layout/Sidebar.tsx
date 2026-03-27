@@ -38,18 +38,21 @@ export default function Sidebar() {
                 "h-16 flex items-center border-b border-[var(--border-default)] transition-all",
                 isSidebarOpen ? "px-4" : "justify-center px-0"
             )}>
-                <div className="flex items-center gap-2 p-1.5">
-                    <img
-                        src="/deexenlogo.png"
-                        alt="Deexen Logo"
-                        className="w-8 h-8 object-cover"
-                    />
+                <div 
+                    className="flex items-center gap-2.5 p-2 cursor-pointer group"
+                    onClick={() => navigate('/dashboard')}
+                >
+                    <div className="relative flex-shrink-0">
+                        <div className="absolute inset-0 bg-[#FF6A00] blur-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded-xl"></div>
+                        <img
+                            src="/deexenlogo.png"
+                            alt="Deexen AI"
+                            className="w-9 h-9 object-contain rounded-xl transition-transform duration-300 group-hover:scale-105 relative z-10"
+                        />
+                    </div>
                     {isSidebarOpen && (
-                        <span
-                            onClick={() => navigate('/dashboard')}
-                            className="text-sm font-medium text-[var(--text-primary)] tracking-tight animate-in fade-in duration-200 cursor-pointer hover:text-orange-500 transition-colors"
-                        >
-                            Deexen AI
+                        <span className="text-[var(--text-primary)] font-semibold text-[15px] tracking-tight animate-in fade-in duration-200 select-none">
+                            Deexen
                         </span>
                     )}
                 </div>
