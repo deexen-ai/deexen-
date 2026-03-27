@@ -1,0 +1,1056 @@
+--- src/App.tsx ---
+17: <<<<<<< HEAD
+18: import AIPanelPage from '@/pages/AIPanelPage';
+19: =======
+20: import React from 'react';
+21: 
+22: class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
+23:   constructor(props: any) { super(props); this.state = { error: null }; }
+24:   static getDerivedStateFromError(error: Error) { return { error }; }
+25:   render() {
+26:     if (this.state.error) {
+27:       return (
+28:         <div style={{ color: 'white', padding: '2rem', backgroundColor: '#990000', minHeight: '100vh', fontFamily: 'monospace' }}>
+29:           <h2>Workspace Crashed</h2>
+30:           <pre>{this.state.error.message}</pre>
+31:           <pre style={{ marginTop: '1rem', whiteSpace: 'pre-wrap' }}>{this.state.error.stack}</pre>
+32:         </div>
+33:       );
+34:     }
+35:     return this.props.children;
+36:   }
+37: }
+38: >>>>>>> origin/main
+--- src/components/dashboard/NewProjectModal.tsx ---
+20: <<<<<<< HEAD
+21:     const { addProject } = useProjectStore();
+22: =======
+23:     const { createProjectAPI } = useProjectStore();
+24: >>>>>>> origin/main
+47: <<<<<<< HEAD
+48:         // Simulate extraction/creation delay
+49:         setTimeout(() => {
+50:             addProject({
+51:                 name,
+52:                 description,
+53:                 language: 'Plain Text', // Default until extraction
+54:                 techStack: [], // To be extracted later
+55:                 fullDescription: description,
+56:                 features: ['Initialized Project'],
+57:                 architecture: 'Empty Project',
+58:                 fileStructure: '/src'
+59:             });
+60:             setIsCreating(false);
+61: =======
+62:         try {
+63:             await createProjectAPI(name, description);
+64: >>>>>>> origin/main
+--- src/components/editor/CodeEditor.tsx ---
+1: <<<<<<< HEAD
+2: import React, { useEffect, useRef } from 'react';
+3: =======
+4: import React, { useEffect } from 'react';
+5: >>>>>>> origin/main
+12: <<<<<<< HEAD
+13: =======
+14: import { useParams } from 'react-router-dom';
+15: import { projectService } from '@/services/projectService';
+16: >>>>>>> origin/main
+39: <<<<<<< HEAD
+40:     const { isAIPanelOpen, toggleAIPanel, setTerminalOpen } = useLayoutStore();
+41:     const { executeCommand } = useTerminalStore();
+42: 
+43:     const saveRef = useRef(onSave);
+44:     useEffect(() => {
+45:         saveRef.current = onSave;
+46:     }, [onSave]);
+47: =======
+48:     const { isAIPanelOpen, toggleAIPanel, setTerminalOpen, isTerminalOpen } = useLayoutStore();
+49:     const { sendInput } = useTerminalStore();
+50:     const { projectId } = useParams();
+51:     const saveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+52: >>>>>>> origin/main
+58: <<<<<<< HEAD
+59:         setTerminalOpen(true);
+60:         executeCommand('npm run dev', projectName || 'project');
+61: =======
+62:         if (!isTerminalOpen) {
+63:             setTerminalOpen(true);
+64:         }
+65: 
+66:         let runCommand = "npm run dev\\r";
+67: 
+68:         if (activeLanguage === 'python') {
+69:             const fileName = activeFileId?.split('/').pop() || 'main.py';
+70:             runCommand = `python ${fileName}\\r`;
+71:         } else if (activeLanguage === 'javascript') {
+72:             const fileName = activeFileId?.split('/').pop() || 'index.js';
+73:             runCommand = `node ${fileName}\\r`;
+74:         }
+75: 
+76:         // Timeout to ensure terminal is mounted/connected if it was just opened
+77:         setTimeout(() => {
+78:             sendInput(runCommand);
+79:         }, 100);
+80: >>>>>>> origin/main
+200: <<<<<<< HEAD
+201: =======
+202: 
+203:                                 if (projectId && !activeFileId.includes('root') && !activeFileId.includes('project')) {
+204:                                     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+205:                                     saveTimeoutRef.current = setTimeout(() => {
+206:                                         projectService.saveFile(projectId, activeFileId, value).catch(err => {
+207:                                             console.error("Failed to auto-save file:", err);
+208:                                         });
+209:                                     }, 1000);
+210:                                 }
+211: >>>>>>> origin/main
+230: <<<<<<< HEAD
+231:                         onMount={(editor, monaco) => {
+232:                             editor.addAction({
+233:                                 id: 'save-project',
+234:                                 label: 'Save Project',
+235:                                 keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
+236:                                 run: () => {
+237:                                     if (saveRef.current) saveRef.current();
+238:                                 }
+239:                             });
+240:                         }}
+241: =======
+242: >>>>>>> origin/main
+--- src/components/layout/Sidebar.tsx ---
+54: <<<<<<< HEAD
+55:                         <span className="text-[var(--text-primary)] font-semibold text-[15px] tracking-tight animate-in fade-in duration-200 select-none">
+56:                             Deexen
+57: =======
+58:                         <span
+59:                             onClick={() => navigate('/dashboard')}
+60:                             className="text-sm font-medium text-[var(--text-primary)] tracking-tight animate-in fade-in duration-200 cursor-pointer hover:text-orange-500 transition-colors"
+61:                         >
+62:                             Deexen AI
+63: >>>>>>> origin/main
+--- src/components/terminal/Terminal.tsx ---
+4: <<<<<<< HEAD
+5: import { useFileStore } from '@/stores/useFileStore';
+6: import { useLayoutStore } from '@/stores/useLayoutStore';
+7: import { useTerminalStore } from '@/stores/useTerminalStore';
+8: 
+9: export default function Terminal() {
+10:     const [activeTab, setActiveTab] = useState<'Problems' | 'Output' | 'Debug Console' | 'Terminal' | 'Ports'>('Terminal');
+11:     const { projectName } = useFileStore();
+12:     const { setTerminalOpen, toggleTerminalMaximized, isTerminalMaximized } = useLayoutStore();
+13:     const { history, sessions, activeSessionId, addSession, deleteActiveSession, setActiveSession, executeCommand } = useTerminalStore();
+14: 
+15:     const [command, setCommand] = useState('');
+16:     const inputRef = useRef<HTMLInputElement>(null);
+17:     const scrollContainerRef = useRef<HTMLDivElement>(null);
+18: =======
+19: import { useLayoutStore } from '@/stores/useLayoutStore';
+20: import { useTerminalStore } from '@/stores/useTerminalStore';
+21: import { Terminal as XTerm } from 'xterm';
+22: import { FitAddon } from 'xterm-addon-fit';
+23: import 'xterm/css/xterm.css';
+24: 
+25: export default function Terminal() {
+26:     const [activeTab, setActiveTab] = useState<'Problems' | 'Output' | 'Debug Console' | 'Terminal' | 'Ports'>('Terminal');
+27:     const { setTerminalOpen, toggleTerminalMaximized, isTerminalMaximized } = useLayoutStore();
+28:     const {
+29:         sessions,
+30:         activeSessionId,
+31:         addSession,
+32:         deleteActiveSession,
+33:         setActiveSession,
+34:         connect,
+35:         disconnect,
+36:         socket,
+37:         sendInput,
+38:         resizeTerminal
+39:     } = useTerminalStore();
+40: >>>>>>> origin/main
+48: <<<<<<< HEAD
+49:         if (activeTab === 'Terminal' && scrollContainerRef.current) {
+50:             scrollContainerRef.current.scrollTo({
+51:                 top: scrollContainerRef.current.scrollHeight,
+52:                 behavior: 'smooth'
+53:             });
+54:         }
+55:     }, [history, activeTab]);
+56: 
+57:     const handleAddSession = () => {
+58:         addSession('pwsh');
+59:     };
+60: 
+61:     const handleDeleteSession = () => {
+62:         deleteActiveSession();
+63:     };
+64: 
+65:     const handleKeyDown = (e: React.KeyboardEvent) => {
+66:         if (e.key === 'Enter') {
+67:             executeCommand(command, projectName);
+68:             setCommand('');
+69:         }
+70:     };
+71: 
+72:     return (
+73:         <div
+74:             className="h-full bg-[#181818] flex flex-col font-mono text-[13px] overflow-hidden text-[#cccccc]"
+75:             onClick={() => activeTab === 'Terminal' && inputRef.current?.focus()}
+76:         >
+77: =======
+78:         connect();
+79:         return () => disconnect();
+80:     }, []);
+81: 
+82:     // Initialize XTerm
+83:     useEffect(() => {
+84:         if (!terminalRef.current || activeTab !== 'Terminal') return;
+85: 
+86:         const term = new XTerm({
+87:             cursorBlink: true,
+88:             fontSize: 13,
+89:             fontFamily: 'JetBrains Mono, Menlo, Monaco, "Courier New", monospace',
+90:             theme: {
+91:                 background: '#181818',
+92:                 foreground: '#cccccc',
+93:                 cursor: '#cccccc',
+94:                 selectionBackground: '#ffffff33',
+95:             },
+96:             allowProposedApi: true
+97:         });
+98: 
+99:         const fitAddon = new FitAddon();
+100:         term.loadAddon(fitAddon);
+101:         term.open(terminalRef.current);
+102:         fitAddon.fit();
+103: 
+104:         term.onData(data => {
+105:             sendInput(data);
+106:         });
+107: 
+108:         term.onResize(size => {
+109:             resizeTerminal(size.cols, size.rows);
+110:         });
+111: 
+112:         xtermRef.current = term;
+113:         fitAddonRef.current = fitAddon;
+114: 
+115:         // Write any buffered data if needed (optional)
+116: 
+117:         return () => {
+118:             term.dispose();
+119:             xtermRef.current = null;
+120:         };
+121:     }, [activeTab]); // Re-initialize when switching back to Terminal tab
+122: 
+123:     // Handle incoming data
+124:     useEffect(() => {
+125:         if (!socket || !xtermRef.current) return;
+126: 
+127:         const handleData = (data: string) => {
+128:             xtermRef.current?.write(data);
+129:         };
+130: 
+131:         socket.on('terminal.data', handleData);
+132:         return () => {
+133:             socket.off('terminal.data', handleData);
+134:         };
+135:     }, [socket, activeTab]);
+136: 
+137:     // Handle resize on panel change
+138:     useEffect(() => {
+139:         const timer = setTimeout(() => {
+140:             fitAddonRef.current?.fit();
+141:         }, 100);
+142:         return () => clearTimeout(timer);
+143:     }, [isTerminalMaximized, activeTab]);
+144: 
+145:     const handleAddSession = () => {
+146:         addSession('terminal');
+147:     };
+148: 
+149:     const handleDeleteSession = () => {
+150:         deleteActiveSession();
+151:     };
+152: 
+153:     return (
+154:         <div className="h-full bg-[#181818] flex flex-col font-mono text-[13px] overflow-hidden text-[#cccccc]">
+155: >>>>>>> origin/main
+220: <<<<<<< HEAD
+221:                 {activeTab === 'Terminal' && (
+222:                     <>
+223:                         {/* Main Terminal View */}
+224:                         <div
+225:                             ref={scrollContainerRef}
+226:                             className="flex-1 h-full pl-5 pr-2 py-3 overflow-auto cursor-text"
+227:                             onClick={() => inputRef.current?.focus()}
+228:                         >
+229:                             {sessions.length === 0 ? (
+230:                                 <div className="text-[#808080] italic px-2">No terminal sessions active. Click '+' to start a new session.</div>
+231:                             ) : (
+232:                                 <div className="font-mono text-[13px] leading-relaxed">
+233:                                     {history.map((line) => (
+234:                                         <div key={line.id} className="mb-1">
+235:                                             {line.content}
+236:                                         </div>
+237:                                     ))}
+238:                                     <div className="flex items-center">
+239:                                         {/* Left margin circle indicator */}
+240:                                         <div className="mr-[18px] shrink-0">
+241:                                             <div className="h-2 w-2 rounded-full border border-[#4d4d4d]" />
+242:                                         </div>
+243:                                         <span className="text-[#cccccc] mr-1 whitespace-nowrap">PS C:\Users\11ara\github\{projectName?.toLowerCase().replace(/\s+/g, '-') || 'deexen-frontend'}&gt;</span>
+244:                                         <input
+245:                                             ref={inputRef}
+246:                                             type="text"
+247:                                             value={command}
+248:                                             onChange={(e) => setCommand(e.target.value)}
+249:                                             onKeyDown={handleKeyDown}
+250:                                             className="bg-transparent border-none outline-none text-[#cccccc] flex-1 min-w-[50px] font-mono text-[13px]"
+251:                                             autoFocus
+252:                                             spellCheck={false}
+253:                                         />
+254:                                     </div>
+255:                                 </div>
+256:                             )}
+257:                         </div>
+258: 
+259:                         {/* Right Sidebar (Terminal Sessions) */}
+260:                         <div className="w-[160px] shrink-0 border-l border-[#2b2b2b] flex flex-col py-1 select-none">
+261:                             {sessions.map(session => (
+262:                                 <div
+263:                                     key={session.id}
+264:                                     className={cn(
+265:                                         "px-3 py-[2px] flex items-center gap-2 cursor-pointer group",
+266:                                         activeSessionId === session.id ? "bg-[#37373d]" : "hover:bg-[#2a2d2e]"
+267:                                     )}
+268:                                     onClick={() => setActiveSession(session.id)}
+269:                                 >
+270:                                     <TerminalSquare className="h-[14px] w-[14px] text-[#cccccc]" />
+271:                                     <span className={cn(
+272:                                         "flex-1 truncate text-[12px] pt-[1px]",
+273:                                         activeSessionId === session.id ? "text-white" : "text-[#cccccc]"
+274:                                     )}>
+275:                                         {session.name}
+276:                                     </span>
+277:                                     {session.hasWarning && (
+278:                                         <AlertTriangle className="h-[13px] w-[13px] text-[#cca700]" />
+279:                                     )}
+280:                                 </div>
+281:                             ))}
+282:                         </div>
+283:                     </>
+284:                 )}
+285: 
+286:                 {activeTab !== 'Terminal' && (
+287:                     <div className="p-4 text-[#8c8c8c] flex-1">
+288:                         {/* Empty Space for other tabs */}
+289: =======
+290:                 {activeTab === 'Terminal' ? (
+291:                     <>
+292:                         {/* Main Terminal View */}
+293:                         <div className="flex-1 h-full relative overflow-hidden">
+294:                             <div
+295:                                 ref={terminalRef}
+296:                                 className="absolute inset-0 p-3 xterm-container"
+297:                             />
+298:                         </div>
+299: 
+300:                         {/* Right Sidebar (Terminal Sessions) */}
+301:                         <div className="w-[160px] shrink-0 border-l border-[#2b2b2b] flex flex-col py-1 select-none">
+302:                             {sessions.map(session => (
+303:                                 <div
+304:                                     key={session.id}
+305:                                     className={cn(
+306:                                         "px-3 py-[2px] flex items-center gap-2 cursor-pointer group",
+307:                                         activeSessionId === session.id ? "bg-[#37373d]" : "hover:bg-[#2a2d2e]"
+308:                                     )}
+309:                                     onClick={() => setActiveSession(session.id)}
+310:                                 >
+311:                                     <TerminalSquare className="h-[14px] w-[14px] text-[#cccccc]" />
+312:                                     <span className={cn(
+313:                                         "flex-1 truncate text-[12px] pt-[1px]",
+314:                                         activeSessionId === session.id ? "text-white" : "text-[#cccccc]"
+315:                                     )}>
+316:                                         {session.name}
+317:                                     </span>
+318:                                     {session.hasWarning && (
+319:                                         <AlertTriangle className="h-[13px] w-[13px] text-[#cca700]" />
+320:                                     )}
+321:                                 </div>
+322:                             ))}
+323:                         </div>
+324:                     </>
+325:                 ) : activeTab === 'Problems' ? (
+326:                     <div className="flex-1 flex flex-col p-4 overflow-auto">
+327:                         <div className="flex items-center gap-2 text-[#8c8c8c] mb-4">
+328:                             <span className="font-bold">0</span> Problems
+329:                         </div>
+330:                         <div className="text-[12px] text-[#8c8c8c] italic">
+331:                             No problems have been detected in the workspace so far.
+332:                         </div>
+333:                     </div>
+334:                 ) : activeTab === 'Output' ? (
+335:                     <div className="flex-1 flex flex-col p-4 overflow-auto font-mono text-[12px]">
+336:                         <div className="flex items-center gap-2 text-[#8c8c8c] mb-2 border-b border-[#2b2b2b] pb-2">
+337:                             <span>Show output from:</span>
+338:                             <select className="bg-[#1e1e1e] border border-[#3c3c3c] rounded px-1 text-[#cccccc] outline-none">
+339:                                 <option>Tasks</option>
+340:                                 <option>Extension Host</option>
+341:                                 <option>GitHub Authentication</option>
+342:                             </select>
+343:                         </div>
+344:                         <div className="text-[#8c8c8c]">
+345:                             [info] Initializing extension host...
+346:                             <br />
+347:                             [info] Finished loading extensions.
+348:                         </div>
+349:                     </div>
+350:                 ) : activeTab === 'Debug Console' ? (
+351:                     <div className="flex-1 flex flex-col p-4 overflow-auto font-mono text-[12px]">
+352:                         <div className="text-[#8c8c8c] italic">
+353:                             The debug console is empty. Start a debug session to see output here.
+354:                         </div>
+355:                         <div className="mt-auto flex items-center border-t border-[#2b2b2b] pt-2">
+356:                             <span className="text-blue-500 mr-2">&gt;</span>
+357:                             <input
+358:                                 className="bg-transparent border-none outline-none text-[#cccccc] flex-1"
+359:                                 placeholder="Type a debug command or expression"
+360:                                 readOnly
+361:                             />
+362:                         </div>
+363:                     </div>
+364:                 ) : (
+365:                     <div className="p-4 text-[#8c8c8c] flex-1">
+366:                         {activeTab} content goes here...
+367: >>>>>>> origin/main
+--- src/pages/DashboardPage.tsx ---
+258: <<<<<<< HEAD
+259:     const { deleteProject } = useProjectStore();
+260: =======
+261:     const { deleteProjectAPI } = useProjectStore();
+262: >>>>>>> origin/main
+288: <<<<<<< HEAD
+289:     const handleDeleteClick = (e: React.MouseEvent) => {
+290:         e.stopPropagation();
+291:         if (window.confirm(`Are you sure you want to delete "${project.name}"?`)) {
+292:             deleteProject(project.id);
+293:             addToast(`Project "${project.name}" deleted.`, 'info');
+294: =======
+295:     const handleDeleteClick = async (e: React.MouseEvent) => {
+296:         e.stopPropagation();
+297:         if (window.confirm(`Are you sure you want to delete "${project.name}"?`)) {
+298:             try {
+299:                 await deleteProjectAPI(project.id);
+300:                 addToast(`Project "${project.name}" deleted.`, 'info');
+301:             } catch {
+302:                 addToast('Failed to delete project.', 'error');
+303:             }
+304: >>>>>>> origin/main
+--- src/pages/LandingPage.tsx ---
+1: <<<<<<< HEAD
+2: import React, { useEffect } from 'react';
+3: =======
+4: import { useState, useEffect } from 'react';
+5: >>>>>>> origin/main
+13: <<<<<<< HEAD
+14:     const mainRef = React.useRef<HTMLDivElement>(null);
+15: 
+16:     useEffect(() => {
+17:         const handleMouseMove = (e: MouseEvent) => {
+18:             if (mainRef.current) {
+19:                 mainRef.current.style.setProperty('--mouse-x', `${e.clientX}px`);
+20:                 mainRef.current.style.setProperty('--mouse-y', `${e.clientY}px`);
+21:             }
+22: =======
+23:     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+24: 
+25:     useEffect(() => {
+26:         const handleMouseMove = (e: MouseEvent) => {
+27:             setMousePos({ x: e.clientX, y: e.clientY });
+28: >>>>>>> origin/main
+35: <<<<<<< HEAD
+36:         <div
+37:             ref={mainRef}
+38:             className="min-h-screen bg-[#000000] text-[#ededed] font-sans selection:bg-[#FF6A00]/30 selection:text-white relative overflow-x-hidden"
+39:             style={{
+40:                 '--mouse-x': '50%',
+41:                 '--mouse-y': '50%'
+42:             } as React.CSSProperties}
+43:         >
+44: 
+45:             {/* Immersive Background Elements */}
+46:             <div className="fixed inset-0 z-0 pointer-events-none">
+47:                 {/* Charcoal to black gradient */}
+48:                 <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a] via-[#050505] to-[#000000]"></div>
+49: 
+50:                 {/* Interactive cursor spotlight */}
+51:                 <div
+52:                     className="absolute inset-0 transition-opacity duration-1000 opacity-60"
+53:                     style={{
+54:                         background: `radial-gradient(1000px circle at var(--mouse-x) var(--mouse-y), rgba(255, 106, 0, 0.08), transparent 40%)`
+55:                     }}
+56:                 ></div>
+57: 
+58:                 {/* Technical developer grid overlay */}
+59:                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_30%,#000_60%,transparent_100%)]"></div>
+60: 
+61:                 {/* Central soft glow */}
+62:                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[100vw] h-[600px] bg-[#FF6A00] opacity-[0.03] blur-[120px] rounded-full pointer-events-none"></div>
+63: 
+64:                 {/* Grain effect for texture */}
+65:                 <div className="absolute inset-0 opacity-[0.15] mix-blend-overlay pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+66:             </div>
+67: 
+68:             {/* Premium Navigation Header */}
+69:             <nav className="fixed top-0 left-0 right-0 z-[100] border-b border-white/[0.06] bg-[#000000]/60 backdrop-blur-2xl transition-all duration-500">
+70:                 <div className="max-w-[1200px] mx-auto h-[76px] flex items-center justify-between px-8">
+71:                     <div 
+72:                         className="flex items-center gap-2.5 cursor-pointer group" 
+73:                         onClick={() => navigate('/')}
+74:                     >
+75:                         <div className="relative">
+76:                             <div className="absolute inset-0 bg-[#FF6A00] blur-[16px] opacity-0 group-hover:opacity-30 transition-opacity duration-500 rounded-xl"></div>
+77:                             <img 
+78:                                 src="/deexenlogo.png" 
+79:                                 alt="Deexen AI" 
+80:                                 className="w-10 h-10 relative z-10 object-contain rounded-xl group-hover:scale-[1.05] transition-all duration-300" 
+81:                             />
+82:                         </div>
+83:                         <span className="text-white font-semibold text-[17px] tracking-tight select-none">
+84:                             Deexen
+85:                         </span>
+86:                     </div>
+87: 
+88:                     <div className="flex items-center space-x-8">
+89:                         <button 
+90:                             className="text-[14px] font-medium text-[#a1a1a1] hover:text-white transition-all duration-300 relative group"
+91:                             onClick={() => navigate('/login')}
+92:                         >
+93:                             Log in
+94:                             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#FF6A00]/50 group-hover:w-full transition-all duration-300"></span>
+95:                         </button>
+96:                         <button 
+97:                             className="text-[14px] font-semibold bg-white text-black px-6 py-2.5 rounded-full hover:bg-[#FF6A00] hover:text-white transition-all duration-500 shadow-[0_0_25px_rgba(255,255,255,0.1)] active:scale-95"
+98:                             onClick={() => navigate('/signup')}
+99:                         >
+100:                             Sign up
+101:                         </button>
+102:                     </div>
+103: =======
+104:         <div className="min-h-screen bg-[#000000] text-[#ededed] font-sans selection:bg-[#FF6A00]/30 selection:text-white relative overflow-hidden">
+105: 
+106:             {/* Immersive Background Elements */}
+107:             <div className="absolute inset-0 z-0 pointer-events-none">
+108:                 {/* Charcoal to black gradient */}
+109:                 <div className="absolute inset-0 bg-gradient-to-b from-[#111111] via-[#050505] to-[#000000]"></div>
+110: 
+111:                 {/* Interactive cursor spotlight */}
+112:                 <div
+113:                     className="absolute inset-0 mix-blend-screen transition-all duration-75 ease-out opacity-60"
+114:                     style={{
+115:                         background: `radial-gradient(1000px circle at ${mousePos.x}px ${mousePos.y}px, rgba(255, 106, 0, 0.08), transparent 40%)`
+116:                     }}
+117:                 ></div>
+118: 
+119:                 {/* Central radial soft glow */}
+120:                 <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[#FF6A00] opacity-[0.05] blur-[100px] rounded-[100%] pointer-events-none animate-[pulse_4s_ease-in-out_infinite]"></div>
+121: 
+122:                 {/* Technical developer grid overlay */}
+123:                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_70%_70%_at_50%_30%,#000_60%,transparent_100%)]"></div>
+124: 
+125:                 {/* Soft ambient vignette */}
+126:                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,#000000_100%)]"></div>
+127: 
+128:                 {/* Simulated floating particles via CSS pattern */}
+129:                 <div className="absolute inset-0 opacity-[0.02] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjZmZmIi8+Cjwvc3ZnPg==')] [mask-image:linear-gradient(to_bottom,transparent,black,transparent)] animate-[pulse_8s_ease-in-out_infinite]"></div>
+130:             </div>
+131: 
+132:             {/* Glassmorphism Navigation */}
+133:             <nav className="fixed top-0 left-0 right-0 z-50 h-[72px] bg-[#000000]/40 backdrop-blur-xl border-b border-white/[0.04] flex items-center justify-between px-8 max-w-[1200px] mx-auto w-full transition-all duration-300">
+134:                 <div className="flex items-center cursor-pointer group" onClick={() => navigate('/')}>
+135:                     <img src="/deexen_full_logo.png" alt="Deexen AI" className="h-7 group-hover:scale-105 transition-transform duration-500 brightness-[100] saturate-0" />
+136:                 </div>
+137:                 <div className="flex items-center space-x-6 relative z-10">
+138:                     <button className="text-[14px] font-medium text-[#888888] hover:text-white transition-colors duration-300" onClick={() => navigate('/login')}>Log in</button>
+139:                     <button className="text-[14px] font-medium bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white px-5 py-2 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(255,255,255,0.05)]" onClick={() => navigate('/signup')}>Sign up</button>
+140: >>>>>>> origin/main
+145: <<<<<<< HEAD
+146:             <main className="pt-[140px] pb-20 px-6 max-w-[1200px] mx-auto w-full relative z-10" style={{ scrollBehavior: 'smooth' }}>
+147: =======
+148:             <main className="pt-[180px] pb-20 px-6 max-w-[1000px] mx-auto w-full relative z-10 h-screen overflow-y-auto" style={{ scrollBehavior: 'smooth' }}>
+149: >>>>>>> origin/main
+159: <<<<<<< HEAD
+160:                     <h1 className="font-sans text-[48px] sm:text-[64px] md:text-[88px] font-bold leading-[1.05] tracking-[-0.04em] mb-8 animate-in fade-in slide-in-from-bottom-12 duration-[1.2s] delay-150 ease-out">
+161:                         <span className="text-white drop-shadow-[0_10px_30px_rgba(255,255,255,0.1)]">The Professional IDE</span> <br />
+162:                         <span className="text-white/40 font-normal italic tracking-[-0.02em] block mt-2">for builders to show & tell.</span>
+163: =======
+164:                     <h1 className="font-sans text-[64px] md:text-[96px] font-bold leading-[1.05] tracking-[-0.04em] mb-6 animate-in fade-in slide-in-from-bottom-12 duration-[1.2s] delay-150 ease-out">
+165:                         <span className="text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.05)]">The Professional IDE</span> <br />
+166:                         <span className="text-[#777777] font-normal italic tracking-[-0.02em]">for builders to show & tell.</span>
+167: >>>>>>> origin/main
+--- src/pages/LoginPage.tsx ---
+74: <<<<<<< HEAD
+75:                 <div className="flex flex-col items-center justify-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+76:                     <div className="relative group">
+77:                         <div className="absolute inset-0 bg-[#FF6A00] blur-2xl opacity-20 rounded-2xl scale-110"></div>
+78:                         <img 
+79:                             src="/deexenlogo.png" 
+80:                             alt="Deexen AI" 
+81:                             className="w-16 h-16 relative z-10 object-contain rounded-2xl shadow-[0_0_20px_rgba(255,106,0,0.15)] group-hover:scale-105 transition-transform duration-300" 
+82:                         />
+83:                     </div>
+84: =======
+85:                 <div className="flex items-center justify-center mb-10">
+86:                     <img src="/deexen_full_logo.png" alt="Deexen AI" className="h-20 w-auto object-contain" />
+87: >>>>>>> origin/main
+--- src/pages/ProjectsPage.tsx ---
+171: <<<<<<< HEAD
+172:     const { deleteProject } = useProjectStore();
+173: =======
+174:     const { deleteProjectAPI } = useProjectStore();
+175: >>>>>>> origin/main
+201: <<<<<<< HEAD
+202:     const handleDeleteClick = (e: React.MouseEvent) => {
+203:         e.stopPropagation();
+204:         if (window.confirm(`Are you sure you want to delete "${project.name}"?`)) {
+205:             deleteProject(project.id);
+206:             addToast(`Project "${project.name}" deleted.`, 'info');
+207: =======
+208:     const handleDeleteClick = async (e: React.MouseEvent) => {
+209:         e.stopPropagation();
+210:         if (window.confirm(`Are you sure you want to delete "${project.name}"?`)) {
+211:             try {
+212:                 await deleteProjectAPI(project.id);
+213:                 addToast(`Project "${project.name}" deleted.`, 'info');
+214:             } catch {
+215:                 addToast('Failed to delete project.', 'error');
+216:             }
+217: >>>>>>> origin/main
+--- src/pages/SignupPage.tsx ---
+118: <<<<<<< HEAD
+119:                 <div className="flex flex-col items-center justify-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+120:                     <div className="relative group">
+121:                         <div className="absolute inset-0 bg-[#FF6A00] blur-2xl opacity-20 rounded-2xl scale-110"></div>
+122:                         <img 
+123:                             src="/deexenlogo.png" 
+124:                             alt="Deexen AI" 
+125:                             className="w-16 h-16 relative z-10 object-contain rounded-2xl shadow-[0_0_20px_rgba(255,106,0,0.15)] group-hover:scale-105 transition-transform duration-300" 
+126:                         />
+127:                     </div>
+128: =======
+129:                 <div className="flex items-center justify-center mb-10">
+130:                     <img src="/deexen_full_logo.png" alt="Deexen AI" className="h-20 w-auto object-contain" />
+131: >>>>>>> origin/main
+--- src/pages/WorkspacePage.tsx ---
+2: <<<<<<< HEAD
+3: import { FileCode, Search, GitBranch, Settings, Sparkles } from 'lucide-react';
+4: =======
+5: import { FileCode, Search, GitBranch, Settings, ArrowLeft, Puzzle, Blocks, Activity, Sparkles } from 'lucide-react';
+6: import { useNavigate, useParams } from 'react-router-dom';
+7: >>>>>>> origin/main
+52: <<<<<<< HEAD
+53:                 className="w-10 h-10 flex items-center justify-center text-neutral-600 hover:text-neutral-400 transition-colors"
+54: =======
+55:                 onClick={() => onIconClick('settings')}
+56:                 className={cn(
+57:                     "w-10 h-10 flex items-center justify-center relative transition-colors",
+58:                     activeView === 'settings'
+59:                         ? "text-[var(--text-primary)]"
+60:                         : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+61:                 )}
+62: >>>>>>> origin/main
+81: <<<<<<< HEAD
+82:     useEffect(() => {
+83:         if (activeSidebarView === 'ai') {
+84:             setShowRightPanel(true);
+85: =======
+86:     const { isSidebarOpen, setSidebarOpen, toggleSidebar, isTerminalOpen, toggleTerminal, isTerminalMaximized, toggleAIPanel, isAIPanelOpen } = useLayoutStore();
+87: 
+88:     const { projectId } = useParams();
+89:     const { projects } = useProjectStore();
+90: 
+91:     const { activeFileId, projectName, setFiles, setProjectName } = useFileStore();
+92:     const files = useFileStore(state => state.files); // Selector for persistence/updates
+93: 
+94:     // Extension Store
+95:     const activeExtensionDetail = usePluginStore(state => state.activeExtensionDetail);
+96: 
+97:     const handleIconClick = (viewId: string) => {
+98:         if (activeSidebarView === viewId) {
+99:             // Toggle sidebar if clicking the same icon
+100:             toggleSidebar();
+101:         } else {
+102:             // Switch view and ensure sidebar is open
+103:             setActiveSidebarView(viewId);
+104:             if (!isSidebarOpen) {
+105:                 setSidebarOpen(true);
+106:             }
+107:         }
+108:     };
+109: 
+110:     const activeFilePath = activeFileId ? getFileBreadcrumbs(files, activeFileId) : '';
+111: 
+112:     // Load Project Data
+113:     useEffect(() => {
+114:         if (!projectId) return;
+115: 
+116:         const project = projects.find(p => p.id === projectId);
+117:         if (project) {
+118:             setProjectName(project.name);
+119: 
+120:             if (project.fileTree) {
+121:                 setFiles(project.fileTree);
+122:             } else {
+123:                 // Default structure for new/empty projects
+124:                 const defaultFiles: FileNode[] = [
+125:                     {
+126:                         id: 'root',
+127:                         name: 'root',
+128:                         type: 'folder',
+129:                         isOpen: true,
+130:                         children: [
+131:                             {
+132:                                 id: 'project',
+133:                                 name: 'project',
+134:                                 type: 'folder',
+135:                                 isOpen: true,
+136:                                 children: [
+137:                                     {
+138:                                         id: 'document.txt',
+139:                                         name: 'document.txt',
+140:                                         type: 'file',
+141:                                         content: project.description || `Welcome to your new blank project: ${project.name}`
+142:                                     }
+143:                                 ]
+144:                             }
+145:                         ]
+146:                     }
+147:                 ];
+148:                 setFiles(defaultFiles);
+149:             }
+150:         } else {
+151:             // Project not found - likely deleted or invalid ID
+152:             navigate('/dashboard');
+153: >>>>>>> origin/main
+194: <<<<<<< HEAD
+195:             <div className="h-8 bg-[#0a0a0a] border-b border-neutral-800 flex items-center px-3 text-xs select-none">
+196:                 <div className="flex items-center space-x-2">
+197:                     <img src="/deexenlogo.png" alt="Deexen" className="h-4" />
+198:                     <span className="text-neutral-400">Deexen</span>
+199: =======
+200:             <div className="h-8 bg-[var(--bg-canvas)] border-b border-[var(--border-default)] flex items-center px-3 text-xs select-none z-10">
+201:                 <div
+202:                     id="back-to-dashboard-btn"
+203:                     className="flex items-center space-x-2 cursor-pointer hover:text-[var(--text-primary)] transition-colors text-[var(--text-secondary)]"
+204:                     onClick={() => navigate('/dashboard')}
+205:                 >
+206:                     <ArrowLeft className="h-3.5 w-3.5" />
+207:                     <span>Back to Dashboard</span>
+208: >>>>>>> origin/main
+262: <<<<<<< HEAD
+263:                         className="absolute top-0 bottom-0 right-0 w-1 cursor-col-resize hover:bg-orange-500/50 transition-colors"
+264:                         onMouseDown={startResize('left')}
+265:                     />
+266:                 </div>
+267: 
+268:                 {/* Center Area */}
+269:                 <div className="flex-1 flex flex-col min-w-0">
+270:                     {/* Editor */}
+271:                     <div className="flex-1 min-h-0 bg-[#0a0a0a]">
+272:                         <CodeEditor />
+273:                     </div>
+274: 
+275:                     {/* Terminal Resize Handle */}
+276:                     <div
+277:                         className="h-1 bg-[#0f0f0f] cursor-row-resize hover:bg-orange-500/50 transition-colors"
+278:                         onMouseDown={startResize('terminal')}
+279:                     />
+280: 
+281:                     {/* Terminal */}
+282:                     <div style={{ height: terminalHeight }} className="flex-shrink-0 bg-[#0a0a0a] border-t border-neutral-800">
+283:                         <Terminal />
+284:                     </div>
+285: =======
+286:                         style={{ width: leftPanelWidth }}
+287:                         className="flex-shrink-0 flex flex-col bg-[var(--bg-surface)] border-r border-[var(--border-default)] relative z-10"
+288:                     >
+289:                         {/* Sidebar Header */}
+290:                         <div className="h-9 flex items-center px-4 text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider border-b border-[var(--border-default)]">
+291:                             {activeSidebarView === 'explorer' && 'Explorer'}
+292:                             {activeSidebarView === 'search' && 'Search'}
+293:                             {activeSidebarView === 'git' && 'Source Control'}
+294:                             {activeSidebarView === 'extensions' && 'Extensions'}
+295:                             {activeSidebarView === 'settings' && 'Project Settings'}
+296:                         </div>
+297: 
+298:                         {/* Sidebar Content */}
+299:                         <div className="flex-1 overflow-auto">
+300:                             {activeSidebarView === 'explorer' && (
+301:                                 <div id="file-explorer-pane">
+302:                                     <FileExplorer />
+303:                                 </div>
+304:                             )}
+305:                             {activeSidebarView === 'search' && (
+306:                                 <div className="p-3">
+307:                                     <input
+308:                                         className="w-full h-8 px-3 bg-[var(--bg-surface-hover)] border border-[var(--border-default)] rounded text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-orange-500"
+309:                                         placeholder="Search..."
+310:                                     />
+311:                                 </div>
+312:                             )}
+313:                             {activeSidebarView === 'git' && (
+314:                                 <div className="h-full flex flex-col">
+315:                                     <SourceControl />
+316:                                 </div>
+317:                             )}
+318:                             {activeSidebarView === 'extensions' && (
+319:                                 <div className="h-full flex flex-col">
+320:                                     <SidebarExtensionList />
+321:                                 </div>
+322:                             )}
+323:                             {activeSidebarView === 'settings' && (
+324:                                 <div className="p-4 space-y-6 animate-in fade-in slide-in-from-left-2 duration-300">
+325:                                     <ProjectSettingsPanel project={projects.find(p => p.id === projectId)} />
+326:                                 </div>
+327:                             )}
+328:                         </div>
+329: 
+330:                         {/* Resize Handle */}
+331:                         <div
+332:                             className="absolute top-0 bottom-0 right-0 w-1 cursor-col-resize hover:bg-orange-500/50 transition-colors"
+333:                             onMouseDown={startResize('left')}
+334:                         />
+335:                     </div>
+336:                 )}
+337: 
+338:                 {/* Main Editor Area */}
+339:                 <div id="editor-pane" className="flex-1 flex flex-col min-w-0 bg-[#1e1e1e] relative">
+340:                     {/* Editor Header / Tabs removed to prevent duplicate bars */}
+341: 
+342:                     {/* Editor or Extension Details */}
+343:                     <div className="flex-1 min-h-0 flex flex-col relative bg-[var(--bg-canvas)]">
+344:                         {activeExtensionDetail ? (
+345:                             <ExtensionDetailView />
+346:                         ) : (
+347:                             <CodeEditor />
+348:                         )}
+349:                     </div>
+350: 
+351:                     {/* Terminal Resize Handle */}
+352:                     {isTerminalOpen && !isTerminalMaximized && (
+353:                         <div
+354:                             className="h-1 bg-[var(--bg-surface)] cursor-row-resize hover:bg-orange-500/50 transition-colors z-20 relative"
+355:                             onMouseDown={startResize('terminal')}
+356:                         />
+357:                     )}
+358: 
+359:                     {/* Terminal */}
+360:                     {isTerminalOpen && (
+361:                         <div
+362:                             style={isTerminalMaximized ? {} : { height: terminalHeight }}
+363:                             className={cn(
+364:                                 "flex-shrink-0 bg-[var(--bg-canvas)] border-t border-[var(--border-default)] z-30",
+365:                                 isTerminalMaximized && "absolute inset-0"
+366:                             )}>
+367:                             <Terminal />
+368:                         </div>
+369:                     )}
+370: >>>>>>> origin/main
+--- src/services/apiClient.ts ---
+22: <<<<<<< HEAD
+23:         this.baseUrl = 'http://localhost:3000/api';
+24:         // Always use mock data since backend is disconnected
+25:         this.useMock = true;
+26: =======
+27:         this.baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+28: >>>>>>> origin/main
+--- src/stores/useTerminalStore.tsx ---
+1: <<<<<<< HEAD
+2: import React from 'react';
+3: import { create } from 'zustand';
+4: 
+5: /**
+6:  * Terminal Store: Manages shell sessions, command history, and execution logic.
+7:  */
+8: 
+9: interface TerminalHistoryItem {
+10:     id: number;
+11:     content: React.ReactNode;
+12: }
+13: 
+14: interface TerminalSession {
+15:     id: number;
+16: =======
+17: import { create } from 'zustand';
+18: import { io, Socket } from 'socket.io-client';
+19: 
+20: /**
+21:  * Terminal Store: Manages shell sessions and real-time backend communication via Socket.io.
+22:  */
+23: 
+24: interface TerminalSession {
+25:     id: string;
+26: >>>>>>> origin/main
+32: <<<<<<< HEAD
+33:     history: TerminalHistoryItem[];
+34:     sessions: TerminalSession[];
+35:     activeSessionId: number;
+36: 
+37:     // Actions
+38:     addHistory: (content: React.ReactNode) => void;
+39:     clearHistory: () => void;
+40:     addSession: (name: string) => void;
+41:     deleteActiveSession: () => void;
+42:     setActiveSession: (id: number) => void;
+43:     executeCommand: (command: string, projectName: string) => void;
+44: }
+45: 
+46: export const useTerminalStore = create<TerminalState>((set, get) => ({
+47:     history: [],
+48:     sessions: [
+49:         { id: 1, name: 'e...', hasWarning: true },
+50:         { id: 2, name: 'pwsh' }
+51:     ],
+52:     activeSessionId: 2,
+53: 
+54:     addHistory: (content) => set((state) => ({
+55:         history: [...state.history, { id: Date.now(), content }]
+56:     })),
+57: 
+58:     clearHistory: () => set({ history: [] }),
+59: 
+60:     addSession: (name) => {
+61:         const newId = Date.now();
+62: =======
+63:     socket: Socket | null;
+64:     sessions: TerminalSession[];
+65:     activeSessionId: string | null;
+66:     isConnected: boolean;
+67: 
+68:     // Actions
+69:     connect: () => void;
+70:     disconnect: () => void;
+71:     addSession: (name: string) => void;
+72:     deleteActiveSession: () => void;
+73:     setActiveSession: (id: string) => void;
+74:     sendInput: (data: string) => void;
+75:     resizeTerminal: (cols: number, rows: number) => void;
+76: }
+77: 
+78: export const useTerminalStore = create<TerminalState>((set, get) => ({
+79:     socket: null,
+80:     sessions: [
+81:         { id: 'initial', name: 'terminal' }
+82:     ],
+83:     activeSessionId: 'initial',
+84:     isConnected: false,
+85: 
+86:     connect: () => {
+87:         const socket = io('http://localhost:3000');
+88: 
+89:         socket.on('connect', () => {
+90:             console.log('Connected to Terminal Gateway');
+91:             set({ isConnected: true });
+92:         });
+93: 
+94:         socket.on('disconnect', () => {
+95:             console.log('Disconnected from Terminal Gateway');
+96:             set({ isConnected: false });
+97:         });
+98: 
+99:         set({ socket });
+100:     },
+101: 
+102:     disconnect: () => {
+103:         const { socket } = get();
+104:         if (socket) {
+105:             socket.disconnect();
+106:             set({ socket: null, isConnected: false });
+107:         }
+108:     },
+109: 
+110:     addSession: (name) => {
+111:         const newId = Date.now().toString();
+112: >>>>>>> origin/main
+125: <<<<<<< HEAD
+126:             newActiveId = -1;
+127: =======
+128:             newActiveId = null;
+129: >>>>>>> origin/main
+136: <<<<<<< HEAD
+137:     executeCommand: (command, projectName) => {
+138:         const { addHistory } = get();
+139:         const cmd = command.trim();
+140:         if (!cmd) return;
+141: 
+142:         // Add the prompt line
+143:         addHistory(
+144:             <span>
+145:                 <span className="text-orange-500">$</span>{' '}
+146:                 <span className="text-[#cccccc]">{cmd}</span>
+147:             </span>
+148:         );
+149: 
+150:         const lowerCmd = cmd.toLowerCase();
+151: 
+152:         if (lowerCmd === 'npm run dev' || lowerCmd === 'run') {
+153:             // Simulated run sequence
+154:             setTimeout(() => {
+155:                 addHistory(<span className="text-blue-400 pl-2">Starting development server...</span>);
+156:             }, 300);
+157:             setTimeout(() => {
+158:                 addHistory(<span className="text-[#808080] pl-2">&gt; {projectName?.toLowerCase() || 'project'}@0.1.0 dev</span>);
+159:                 addHistory(<span className="text-[#808080] pl-2">&gt; vite</span>);
+160:             }, 800);
+161:             setTimeout(() => {
+162:                 addHistory(
+163:                     <div className="flex flex-col text-[#808080] pl-2">
+164:                         <span className="text-emerald-400">  VITE v5.0.0  ready in 420 ms</span>
+165:                         <span>  ➜  Local:   <span className="text-cyan-400 underline">http://localhost:5173/</span></span>
+166:                         <span>  ➜  Network: use --host to expose</span>
+167:                         <span>  ➜  press h + enter to show help</span>
+168:                     </div>
+169:                 );
+170:             }, 1500);
+171:         } else if (lowerCmd === 'ls') {
+172:             addHistory(
+173:                 <div className="flex gap-4 text-[#808080] pl-2">
+174:                     <span>src/</span>
+175:                     <span>public/</span>
+176:                     <span>package.json</span>
+177:                 </div>
+178:             );
+179:         } else if (lowerCmd === 'help') {
+180:             addHistory(
+181:                 <div className="flex flex-col text-[#808080] pl-2">
+182:                     <span>ls      - List files</span>
+183:                     <span>clear   - Clear terminal</span>
+184:                     <span>run     - Execute active project</span>
+185:                 </div>
+186:             );
+187:         } else if (lowerCmd === 'clear') {
+188:             get().clearHistory();
+189:         } else {
+190:             addHistory(<span className="text-red-400 pl-2">Command not found: {cmd}</span>);
+191: =======
+192:     sendInput: (data) => {
+193:         const { socket, isConnected } = get();
+194:         if (socket && isConnected) {
+195:             socket.emit('terminal.input', data);
+196:         }
+197:     },
+198: 
+199:     resizeTerminal: (cols, rows) => {
+200:         const { socket, isConnected } = get();
+201:         if (socket && isConnected) {
+202:             socket.emit('terminal.resize', { cols, rows });
+203: >>>>>>> origin/main
+--- vite.config.ts ---
+15: <<<<<<< HEAD
+16: =======
+17:       'Cross-Origin-Embedder-Policy': 'require-corp',
+18: >>>>>>> origin/main
+24: <<<<<<< HEAD
+25: =======
+26:       'Cross-Origin-Embedder-Policy': 'require-corp',
+27: >>>>>>> origin/main
